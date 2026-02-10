@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Type, PenLine, Calendar, AlignLeft, Check } from 'lucide-react';
 import { SignaturePlaceholder } from '@/data/mockData';
@@ -56,8 +56,21 @@ const loremLines = [
 
 const SigningInterface = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const signerName = searchParams.get('signerName');
+    if (signerName) {
+      setTimeout(() => {
+        toast({
+          title: `Welcome, ${signerName}`,
+          description: 'Please sign the document where indicated.',
+        });
+      }, 500);
+    }
+  }, [searchParams, toast]);
   const [placeholders, setPlaceholders] = useState<SignaturePlaceholder[]>([]);
   const [selectedTool, setSelectedTool] = useState<SignaturePlaceholder['type'] | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -153,11 +166,10 @@ const SigningInterface = () => {
                 <button
                   key={tool.type}
                   onClick={() => setSelectedTool(selectedTool === tool.type ? null : tool.type)}
-                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                    selectedTool === tool.type
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-foreground hover:bg-muted'
-                  }`}
+                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${selectedTool === tool.type
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-foreground hover:bg-muted'
+                    }`}
                 >
                   <tool.icon className="h-4 w-4" />
                   {tool.label}
@@ -176,9 +188,8 @@ const SigningInterface = () => {
         <div className="flex-1 overflow-auto p-4 lg:p-8">
           <div className="mx-auto max-w-3xl">
             <div
-              className={`relative rounded-lg border border-border bg-card p-8 shadow-sm lg:p-12 ${
-                selectedTool ? 'cursor-crosshair' : ''
-              }`}
+              className={`relative rounded-lg border border-border bg-card p-8 shadow-sm lg:p-12 ${selectedTool ? 'cursor-crosshair' : ''
+                }`}
               onClick={handleCanvasClick}
               style={{ minHeight: '900px' }}
             >
