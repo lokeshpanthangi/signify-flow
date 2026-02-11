@@ -191,10 +191,7 @@ const DocumentCard = ({ doc, onClick }: { doc: Document, onClick: () => void }) 
 };
 
 const SignFormCard = ({ form, onClick }: { form: SignForm; onClick: () => void }) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    whileHover={{ y: -4, boxShadow: "0 12px 30px -10px rgba(0,0,0,0.12)" }}
+  <div
     className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-all group cursor-pointer"
     onClick={onClick}
   >
@@ -235,7 +232,7 @@ const SignFormCard = ({ form, onClick }: { form: SignForm; onClick: () => void }
         View Details →
       </span>
     </div>
-  </motion.div>
+  </div>
 );
 
 

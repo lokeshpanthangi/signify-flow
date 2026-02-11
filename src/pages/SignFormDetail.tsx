@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { mockSignForms, mockTemplates, SignForm, SignFormResponse } from '@/data/mockData';
 import {
     ArrowLeft, Link as LinkIcon, Copy, ExternalLink, Power, PowerOff,
@@ -27,11 +26,8 @@ const StatusBadge = ({ status }: { status: SignFormResponse['status'] }) => {
 };
 
 // --- KPI Stat Card ---
-const StatCard = ({ label, value, icon: Icon, color, delay }: { label: string; value: string | number; icon: any; color: string; delay: number }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay, duration: 0.4 }}
+const StatCard = ({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: any; color: string; delay?: number }) => (
+    <div
         className="bg-white rounded-xl border border-stone-200 p-5 shadow-sm hover:shadow-md transition-shadow"
     >
         <div className="flex items-center justify-between mb-3">
@@ -41,7 +37,7 @@ const StatCard = ({ label, value, icon: Icon, color, delay }: { label: string; v
         </div>
         <p className="text-2xl font-bold text-stone-800">{value}</p>
         <p className="text-xs text-stone-500 font-medium mt-1">{label}</p>
-    </motion.div>
+    </div>
 );
 
 const SignFormDetail = () => {
@@ -65,8 +61,8 @@ const SignFormDetail = () => {
                     </div>
                     <h1 className="text-2xl font-bold text-stone-800 mb-2">Form Not Found</h1>
                     <p className="text-stone-500 mb-6">The sign form you are looking for does not exist.</p>
-                    <button onClick={() => navigate('/dashboard')} className="text-green-600 hover:text-green-700 font-medium text-sm">
-                        ← Back to Dashboard
+                    <button onClick={() => navigate('/signforms')} className="text-green-600 hover:text-green-700 font-medium text-sm">
+                        ← Back to SignForms
                     </button>
                 </div>
             </div>
@@ -106,7 +102,7 @@ const SignFormDetail = () => {
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => navigate('/dashboard')}
+                            onClick={() => navigate('/signforms')}
                             className="p-2 hover:bg-stone-100 rounded-lg transition-colors text-stone-600"
                         >
                             <ArrowLeft className="h-5 w-5" />
@@ -150,11 +146,7 @@ const SignFormDetail = () => {
 
             <div className="max-w-7xl mx-auto px-6 py-8">
                 {/* Share Link Banner */}
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-xl border border-stone-200 p-5 mb-8 shadow-sm"
-                >
+                <div className="bg-white rounded-xl border border-stone-200 p-5 mb-8 shadow-sm">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-green-50 rounded-xl border border-green-100">
@@ -180,31 +172,25 @@ const SignFormDetail = () => {
                             </button>
                         </div>
                     </div>
-                </motion.div>
+                </div>
 
                 {/* KPI Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <StatCard label="Total Responses" value={form.responses} icon={Users} color="bg-stone-100 text-stone-600" delay={0.1} />
-                    <StatCard label="Completed" value={completed} icon={CheckCircle2} color="bg-green-50 text-green-600" delay={0.2} />
-                    <StatCard label="Pending" value={pending} icon={Clock} color="bg-amber-50 text-amber-600" delay={0.3} />
+                    <StatCard label="Total Responses" value={form.responses} icon={Users} color="bg-stone-100 text-stone-600" />
+                    <StatCard label="Completed" value={completed} icon={CheckCircle2} color="bg-green-50 text-green-600" />
+                    <StatCard label="Pending" value={pending} icon={Clock} color="bg-amber-50 text-amber-600" />
                     <StatCard
                         label="Capacity"
                         value={form.maxResponses ? `${form.responses}/${form.maxResponses}` : '∞'}
                         icon={BarChart2}
                         color="bg-blue-50 text-blue-600"
-                        delay={0.4}
                     />
                 </div>
 
                 {/* Details Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                     {/* Form Info */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="bg-white rounded-xl border border-stone-200 p-6 shadow-sm"
-                    >
+                    <div className="bg-white rounded-xl border border-stone-200 p-6 shadow-sm">
                         <h3 className="font-semibold text-stone-800 text-lg mb-4">Form Details</h3>
                         <div className="space-y-4">
                             <div className="flex items-start gap-3">
@@ -245,24 +231,17 @@ const SignFormDetail = () => {
                                     <span>{Math.round((form.responses / form.maxResponses) * 100)}%</span>
                                 </div>
                                 <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${(form.responses / form.maxResponses) * 100}%` }}
-                                        transition={{ duration: 1, delay: 0.5 }}
+                                    <div
                                         className="h-full bg-green-600 rounded-full"
+                                        style={{ width: `${(form.responses / form.maxResponses) * 100}%` }}
                                     />
                                 </div>
                             </div>
                         )}
-                    </motion.div>
+                    </div>
 
                     {/* Responses Table */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="lg:col-span-2 bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden"
-                    >
+                    <div className="lg:col-span-2 bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
                         {/* Table Header */}
                         <div className="p-5 border-b border-stone-100">
                             <div className="flex items-center justify-between mb-4">
@@ -311,12 +290,9 @@ const SignFormDetail = () => {
                                     <p className="text-sm font-medium">No responses found</p>
                                 </div>
                             ) : (
-                                filteredResponses.map((response, i) => (
-                                    <motion.div
+                                filteredResponses.map((response) => (
+                                    <div
                                         key={response.id}
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: i * 0.05 }}
                                         className="flex items-center justify-between px-5 py-4 hover:bg-stone-50 transition-colors group"
                                     >
                                         <div className="flex items-center gap-4">
@@ -337,11 +313,11 @@ const SignFormDetail = () => {
                                             <p className="text-xs text-stone-400 font-medium hidden md:block">{response.signedAt}</p>
                                             <StatusBadge status={response.status} />
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 ))
                             )}
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             </div>
         </div>
