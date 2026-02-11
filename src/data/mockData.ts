@@ -76,15 +76,77 @@ export const mockTemplates: Template[] = [
 export interface SignForm {
   id: string;
   name: string;
+  description: string;
   templateId: string;
   status: 'active' | 'inactive';
   responses: number;
+  maxResponses: number | null;
   url: string;
   dateCreated: string;
+  expiryDate: string | null;
+  responsesList: SignFormResponse[];
+}
+
+export interface SignFormResponse {
+  id: string;
+  signerName: string;
+  signerEmail: string;
+  signedAt: string;
+  status: 'completed' | 'pending' | 'expired';
 }
 
 export const mockSignForms: SignForm[] = [
-  { id: 'sf1', name: 'Employee Onboarding', templateId: 't1', status: 'active', responses: 12, url: '/forms/sf1', dateCreated: '2026-02-01' },
-  { id: 'sf2', name: 'Event Registration Waiver', templateId: 't2', status: 'active', responses: 45, url: '/forms/sf2', dateCreated: '2026-02-05' },
-  { id: 'sf3', name: 'Client Intake Form', templateId: 't3', status: 'inactive', responses: 8, url: '/forms/sf3', dateCreated: '2026-01-10' },
+  {
+    id: 'sf1',
+    name: 'Employee Onboarding NDA',
+    description: 'Non-disclosure agreement for new employees joining the company.',
+    templateId: 't1',
+    status: 'active',
+    responses: 12,
+    maxResponses: 50,
+    url: '/forms/sf1',
+    dateCreated: '2026-02-01',
+    expiryDate: '2026-06-01',
+    responsesList: [
+      { id: 'r1', signerName: 'Alice Cooper', signerEmail: 'alice@corp.com', signedAt: '2026-02-02 10:30', status: 'completed' },
+      { id: 'r2', signerName: 'James Wilson', signerEmail: 'jwilson@corp.com', signedAt: '2026-02-03 14:15', status: 'completed' },
+      { id: 'r3', signerName: 'Maria Garcia', signerEmail: 'mgarcia@corp.com', signedAt: '2026-02-05 09:00', status: 'completed' },
+      { id: 'r4', signerName: 'David Chen', signerEmail: 'dchen@corp.com', signedAt: '2026-02-06 16:45', status: 'pending' },
+      { id: 'r5', signerName: 'Sarah Miller', signerEmail: 'smiller@corp.com', signedAt: '2026-02-07 11:20', status: 'completed' },
+    ]
+  },
+  {
+    id: 'sf2',
+    name: 'Event Registration Waiver',
+    description: 'Liability waiver for event participants and attendees.',
+    templateId: 't2',
+    status: 'active',
+    responses: 45,
+    maxResponses: 100,
+    url: '/forms/sf2',
+    dateCreated: '2026-02-05',
+    expiryDate: '2026-03-15',
+    responsesList: [
+      { id: 'r6', signerName: 'Tom Brady', signerEmail: 'tom@example.com', signedAt: '2026-02-05 08:00', status: 'completed' },
+      { id: 'r7', signerName: 'Lisa Park', signerEmail: 'lisa@example.com', signedAt: '2026-02-06 13:30', status: 'completed' },
+      { id: 'r8', signerName: 'Ryan Lee', signerEmail: 'rlee@example.com', signedAt: '2026-02-07 10:00', status: 'expired' },
+    ]
+  },
+  {
+    id: 'sf3',
+    name: 'Client Intake Form',
+    description: 'Standard intake form for new client onboarding with rental agreements.',
+    templateId: 't3',
+    status: 'inactive',
+    responses: 8,
+    maxResponses: null,
+    url: '/forms/sf3',
+    dateCreated: '2026-01-10',
+    expiryDate: null,
+    responsesList: [
+      { id: 'r9', signerName: 'Olivia Smith', signerEmail: 'olivia@realty.com', signedAt: '2026-01-15 09:45', status: 'completed' },
+      { id: 'r10', signerName: 'Noah Brown', signerEmail: 'noah@realty.com', signedAt: '2026-01-20 15:00', status: 'completed' },
+    ]
+  },
 ];
+
