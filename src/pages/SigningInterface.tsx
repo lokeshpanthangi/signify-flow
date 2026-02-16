@@ -1,57 +1,64 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Type, PenLine, Calendar, AlignLeft, Check } from 'lucide-react';
-import { SignaturePlaceholder } from '@/data/mockData';
+import { ArrowLeft, PenLine, Check } from 'lucide-react';
 import SignatureModal from '@/components/SignatureModal';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 
-const tools = [
-  { type: 'signature' as const, icon: PenLine, label: 'Signature' },
-  { type: 'initial' as const, icon: Type, label: 'Initial' },
-  { type: 'date' as const, icon: Calendar, label: 'Date' },
-  { type: 'text' as const, icon: AlignLeft, label: 'Text' },
-];
-
-const loremLines = [
-  'MUTUAL NON-DISCLOSURE AGREEMENT',
-  '',
-  'This Mutual Non-Disclosure Agreement ("Agreement") is entered into',
-  'as of the date last signed below (the "Effective Date") by and between',
-  'Party A ("Disclosing Party") and Party B ("Receiving Party").',
-  '',
-  '1. DEFINITION OF CONFIDENTIAL INFORMATION',
-  '"Confidential Information" means any data or information, oral or written,',
-  'treated as confidential that relates to either party\'s past, present,',
-  'or reasonably anticipated products, services, customers, or business.',
-  '',
-  '2. OBLIGATIONS OF RECEIVING PARTY',
-  'The Receiving Party agrees to hold and maintain the Confidential',
-  'Information in strictest confidence for the sole and exclusive benefit',
-  'of the Disclosing Party. The Receiving Party shall not, without prior',
-  'written approval, use for Receiving Party\'s benefit, publish, copy, or',
-  'otherwise disclose to others, or permit the use by others for their',
-  'benefit or to the detriment of the Disclosing Party.',
-  '',
-  '3. TIME PERIODS',
-  'The nondisclosure provisions of this Agreement shall survive the',
-  'termination of this Agreement and Receiving Party\'s duty to hold',
-  'Confidential Information in confidence shall remain in effect until',
-  'such information no longer qualifies as a trade secret.',
-  '',
-  '4. GOVERNING LAW',
-  'This Agreement and all acts and transactions pursuant hereto and the',
-  'rights and obligations of the parties hereto shall be governed by the',
-  'laws of the State of Delaware, without giving effect to principles of',
-  'conflict of law provisions thereof.',
-  '',
-  '',
-  'AGREED AND ACCEPTED:',
-  '',
-  'Signature: _________________________     Date: ______________',
-  '',
-  'Name: _________________________',
+const documentSections = [
+  {
+    title: 'Service Partnership Agreement',
+    subtitle: 'Digital Services and Delivery Terms',
+    meta: ['Version 2.1', 'Prepared February 14, 2026'],
+  },
+  {
+    heading: '1. Scope of Work',
+    body: [
+      'Provider will design, implement, and maintain the agreed deliverables outlined in Appendix A. Work includes discovery, prototyping, implementation, QA, and deployment assistance.',
+      'Any items outside of Appendix A require written approval and may be subject to additional fees and timeline adjustments.',
+    ],
+  },
+  {
+    heading: '2. Timeline and Delivery',
+    body: [
+      'Project commences within five business days of signature. Estimated completion is eight weeks from the start date, subject to timely client feedback.',
+      'Milestones and review windows are listed in Appendix B. Delays in feedback extend the delivery schedule accordingly.',
+    ],
+  },
+  {
+    heading: '3. Fees and Payment',
+    body: [
+      'Total project fee is $48,000 USD. Payment terms are 40% upfront, 30% at mid‑project delivery, and 30% upon final acceptance.',
+      'Late payments accrue 1.5% monthly interest or the maximum permitted by law, whichever is lower.',
+    ],
+  },
+  {
+    heading: '4. Confidentiality',
+    body: [
+      'Each party agrees to protect non‑public information and use it solely for the purpose of this agreement.',
+      'Confidentiality obligations survive termination for a period of three years.',
+    ],
+  },
+  {
+    heading: '5. Intellectual Property',
+    body: [
+      'Upon full payment, Client receives a perpetual license to use the deliverables. Provider retains ownership of pre‑existing tools and frameworks.',
+      'Open‑source components remain under their respective licenses.',
+    ],
+  },
+  {
+    heading: '6. Termination',
+    body: [
+      'Either party may terminate with 14 days written notice. Client will pay for work completed to date.',
+      'All confidential information must be returned or destroyed upon termination.',
+    ],
+  },
+  {
+    heading: 'Signatures',
+    body: [
+      'By signing, both parties acknowledge and accept the terms of this agreement.',
+    ],
+  },
 ];
 
 const SigningInterface = () => {
@@ -59,9 +66,10 @@ const SigningInterface = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const signRequired = Boolean(searchParams.get('fromForm'));
+  const signerName = searchParams.get('signerName');
 
   useEffect(() => {
-    const signerName = searchParams.get('signerName');
     if (signerName) {
       setTimeout(() => {
         toast({
@@ -70,56 +78,31 @@ const SigningInterface = () => {
         });
       }, 500);
     }
-  }, [searchParams, toast]);
-  const [placeholders, setPlaceholders] = useState<SignaturePlaceholder[]>([]);
-  const [selectedTool, setSelectedTool] = useState<SignaturePlaceholder['type'] | null>(null);
+  }, [signerName, toast]);
+
   const [showModal, setShowModal] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!selectedTool) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const newPlaceholder: SignaturePlaceholder = {
-      id: Date.now().toString(),
-      type: selectedTool,
-      x,
-      y,
-      value: selectedTool === 'date' ? new Date().toLocaleDateString() : undefined,
-    };
-
-    if (selectedTool === 'signature' || selectedTool === 'initial') {
-      setPlaceholders((prev) => [...prev, newPlaceholder]);
-      setActiveId(newPlaceholder.id);
-      setShowModal(true);
-    } else if (selectedTool === 'text') {
-      const text = prompt('Enter text:');
-      if (text) {
-        setPlaceholders((prev) => [...prev, { ...newPlaceholder, value: text }]);
-      }
-    } else {
-      setPlaceholders((prev) => [...prev, newPlaceholder]);
-    }
-  };
+  const [signatureValue, setSignatureValue] = useState<string | null>(null);
+  const [signatureType, setSignatureType] = useState<'draw' | 'type' | null>(null);
+  const [signedAt, setSignedAt] = useState<string | null>(null);
 
   const handleSignatureApply = (value: string, type: 'draw' | 'type') => {
-    setPlaceholders((prev) =>
-      prev.map((p) => (p.id === activeId ? { ...p, value, signatureType: type } : p))
-    );
-  };
-
-  const handlePlaceholderClick = (e: React.MouseEvent, ph: SignaturePlaceholder) => {
-    e.stopPropagation();
-    if (ph.type === 'signature' || ph.type === 'initial') {
-      setActiveId(ph.id);
-      setShowModal(true);
-    }
+    setSignatureValue(value);
+    setSignatureType(type);
+    setSignedAt(new Date().toLocaleString());
+    toast({
+      title: 'Signature captured',
+      description: 'You can finish once you are ready.',
+    });
   };
 
   const handleFinish = () => {
+    if (signRequired && !signatureValue) {
+      toast({
+        title: 'Signature required',
+        description: 'Please add your signature before finishing.',
+      });
+      return;
+    }
     toast({
       title: '✅ Document Signed Successfully',
       description: 'The signed document has been saved and sent to all parties.',
@@ -128,108 +111,109 @@ const SigningInterface = () => {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-muted">
-      {/* Header */}
-      <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="mr-1 h-4 w-4" /> Back
-          </Button>
-          <span className="text-sm font-medium text-foreground">Document #{id}</span>
+    <div className="min-h-screen bg-[#0b0f1a] text-white">
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.28),transparent_60%)]" />
+          <div className="absolute top-40 right-[-120px] h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.18),transparent_65%)]" />
+          <div className="absolute bottom-[-180px] left-[-120px] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.18),transparent_65%)]" />
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            Tools
-          </Button>
-          <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90" onClick={handleFinish}>
-            <Check className="mr-1 h-4 w-4" /> Finish
-          </Button>
-        </div>
-      </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Tool palette */}
-        <motion.aside
-          initial={false}
-          animate={{ width: sidebarOpen ? 200 : 0, opacity: sidebarOpen ? 1 : 0 }}
-          className="flex-shrink-0 overflow-hidden border-r border-border bg-card"
-        >
-          <div className="p-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fields</h3>
-            <div className="space-y-1">
-              {tools.map((tool) => (
-                <button
-                  key={tool.type}
-                  onClick={() => setSelectedTool(selectedTool === tool.type ? null : tool.type)}
-                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${selectedTool === tool.type
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-foreground hover:bg-muted'
-                    }`}
-                >
-                  <tool.icon className="h-4 w-4" />
-                  {tool.label}
-                </button>
-              ))}
+        {/* Header */}
+        <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0b0f1a]/70 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-8">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
+                <ArrowLeft className="mr-1 h-4 w-4" /> Back
+              </Button>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/40">Document</p>
+                <p className="text-sm font-semibold text-white/90">SP-2026-{String(id).padStart(4, '0')}</p>
+              </div>
             </div>
-            {selectedTool && (
-              <p className="mt-4 text-xs text-muted-foreground">
-                Click anywhere on the document to place a <strong>{selectedTool}</strong> field.
-              </p>
+            {signRequired && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-cyan-400/40 text-cyan-100 hover:bg-cyan-500/10"
+                  onClick={() => setShowModal(true)}
+                >
+                  <PenLine className="mr-1 h-4 w-4" /> Sign
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-cyan-400 text-slate-900 hover:bg-cyan-300"
+                  onClick={handleFinish}
+                  disabled={!signatureValue}
+                >
+                  <Check className="mr-1 h-4 w-4" /> Finish
+                </Button>
+              </div>
             )}
           </div>
-        </motion.aside>
+        </header>
 
-        {/* Document canvas */}
-        <div className="flex-1 overflow-auto p-4 lg:p-8">
-          <div className="mx-auto max-w-3xl">
-            <div
-              className={`relative rounded-lg border border-border bg-card p-8 shadow-sm lg:p-12 ${selectedTool ? 'cursor-crosshair' : ''
-                }`}
-              onClick={handleCanvasClick}
-              style={{ minHeight: '900px' }}
-            >
-              {/* Mock document text */}
-              <div className="select-none space-y-1 font-mono text-sm leading-relaxed text-foreground/80">
-                {loremLines.map((line, i) => (
-                  <p key={i} className={line === loremLines[0] ? 'text-center text-base font-bold text-foreground' : ''}>
-                    {line || '\u00A0'}
-                  </p>
+        <main className="relative mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 lg:px-8 lg:py-10">
+          {signRequired && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-white/70 backdrop-blur">
+              {signatureValue ? (
+                <span>
+                  Signature captured{signatureType ? ` (${signatureType})` : ''}{signedAt ? ` on ${signedAt}` : ''}.
+                </span>
+              ) : (
+                <span>Review the document, then click Sign to add your signature.</span>
+              )}
+            </div>
+          )}
+
+          <section className="rounded-[28px] border border-white/10 bg-white/5 p-1 shadow-[0_20px_60px_rgba(2,6,23,0.45)] backdrop-blur">
+            <div className="rounded-[24px] bg-gradient-to-br from-white/95 via-white/90 to-white/80 p-6 text-slate-900 shadow-inner sm:p-10">
+              <div className="border-b border-slate-200 pb-6">
+                <p className="text-[11px] uppercase tracking-[0.4em] text-slate-400">Confidential</p>
+                <h1 className="mt-3 font-serif text-3xl font-semibold text-slate-900 sm:text-4xl">
+                  {documentSections[0].title}
+                </h1>
+                <p className="mt-2 text-sm text-slate-500">{documentSections[0].subtitle}</p>
+                <div className="mt-4 flex flex-wrap gap-3 text-[11px] font-medium uppercase tracking-[0.24em] text-slate-400">
+                  {documentSections[0].meta?.map((item) => (
+                    <span key={item} className="rounded-full border border-slate-200 px-3 py-1">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8 space-y-7 text-[15px] leading-relaxed text-slate-600">
+                {documentSections.slice(1).map((section) => (
+                  <div key={section.heading} className="space-y-3">
+                    <h2 className="text-lg font-semibold text-slate-900">{section.heading}</h2>
+                    {section.body?.map((line, index) => (
+                      <p key={`${section.heading}-${index}`}>{line}</p>
+                    ))}
+                  </div>
                 ))}
               </div>
 
-              {/* Placed fields */}
-              {placeholders.map((ph) => (
-                <div
-                  key={ph.id}
-                  className="absolute cursor-pointer"
-                  style={{ left: ph.x, top: ph.y, transform: 'translate(-50%, -50%)' }}
-                  onClick={(e) => handlePlaceholderClick(e, ph)}
-                >
-                  {ph.value && ph.type === 'signature' && (ph as any).signatureType !== 'type' && ph.value.startsWith('data:') ? (
-                    <img src={ph.value} alt="Signature" className="h-12 border-b-2 border-primary" />
-                  ) : ph.value && ph.type === 'signature' ? (
-                    <span className="border-b-2 border-primary font-cursive text-2xl text-foreground">{ph.value}</span>
-                  ) : ph.value ? (
-                    <span className="rounded border border-primary/30 bg-primary/5 px-2 py-0.5 text-sm text-foreground">
-                      {ph.value}
-                    </span>
-                  ) : (
-                    <div className="flex h-10 items-center gap-1 rounded border-2 border-dashed border-primary/50 bg-primary/5 px-3 text-xs font-medium text-primary">
-                      {ph.type === 'signature' && <PenLine className="h-3 w-3" />}
-                      {ph.type === 'initial' && <Type className="h-3 w-3" />}
-                      Click to sign
-                    </div>
-                  )}
+              <div className="mt-10 grid gap-6 border-t border-slate-200 pt-6 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Provider</p>
+                  <div className="rounded-xl border border-slate-200 bg-white/80 px-4 py-3">
+                    <p className="text-sm font-semibold text-slate-800">Aurora Labs LLC</p>
+                    <p className="text-xs text-slate-500">Authorized Representative</p>
+                  </div>
                 </div>
-              ))}
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Client</p>
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-3">
+                    <p className="text-sm font-semibold text-slate-800">Client Representative</p>
+                    <p className="text-xs text-slate-500">Signature required</p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </section>
+        </main>
       </div>
 
       <SignatureModal

@@ -238,16 +238,14 @@ const Auth = () => {
 
     setIsLoading(true);
     setErrors({});
+    setSuccessMessage('');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
       if (authMode === 'login') {
-        login(formData.email, formData.password);
+        await login(formData.email, formData.password);
         setSuccessMessage('Login successful! Redirecting...');
       } else {
-        signup(formData.name, formData.email, formData.password);
+        await signup(formData.name, formData.email, formData.password);
         setSuccessMessage('Account created! Redirecting...');
       }
 
@@ -255,10 +253,9 @@ const Auth = () => {
         navigate('/dashboard');
       }, 1000);
 
-    } catch (error) {
-      setErrors({
-        general: 'Authentication failed. Please check your credentials.'
-      });
+    } catch (error: any) {
+      const message = error?.message || 'Authentication failed. Please try again.';
+      setErrors({ general: message });
     } finally {
       setIsLoading(false);
     }

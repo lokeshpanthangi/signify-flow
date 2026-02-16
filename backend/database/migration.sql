@@ -1,5 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 --  SignifyFlow Database Schema — Supabase (PostgreSQL)
+--  SIMPLIFIED VERSION - Core tables only
 -- ═══════════════════════════════════════════════════════════════════════════════
 --  Run this SQL in the Supabase SQL Editor to create all tables.
 --  Dashboard → SQL Editor → New Query → Paste & Run
@@ -18,9 +19,6 @@ CREATE TABLE IF NOT EXISTS profiles (
     id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     full_name   TEXT NOT NULL,
     email       TEXT NOT NULL UNIQUE,
-    avatar_url  TEXT,
-    company     TEXT,
-    job_title   TEXT,
     created_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -50,7 +48,6 @@ CREATE TABLE IF NOT EXISTS templates (
     name        TEXT NOT NULL,
     category    TEXT NOT NULL DEFAULT 'General',
     content     TEXT NOT NULL,
-    description TEXT,
     created_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -72,9 +69,6 @@ CREATE TABLE IF NOT EXISTS documents (
     status          TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('signed', 'pending', 'declined')),
     recipient_name  TEXT NOT NULL,
     recipient_email TEXT NOT NULL,
-    file_url        TEXT,
-    content         TEXT,
-    notes           TEXT,
     created_at      TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at      TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -120,8 +114,6 @@ CREATE TABLE IF NOT EXISTS sign_form_responses (
     signer_name     TEXT NOT NULL,
     signer_email    TEXT NOT NULL,
     status          TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('completed', 'pending', 'expired')),
-    signature_data  TEXT,
-    ip_address      TEXT,
     signed_at       TIMESTAMPTZ,
     created_at      TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -146,26 +138,6 @@ CREATE TRIGGER on_response_completed
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
---  6. SIGNATURE FIELDS
---  Positioned input fields placed on documents (signature, date, text, etc.)
--- ═══════════════════════════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS signature_fields (
-    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-    field_type  TEXT NOT NULL DEFAULT 'signature' CHECK (field_type IN ('signature', 'initial', 'date', 'text', 'checkbox', 'dropdown')),
-    page        INT NOT NULL DEFAULT 1,
-    x           REAL NOT NULL,
-    y           REAL NOT NULL,
-    width       REAL NOT NULL DEFAULT 200,
-    height      REAL NOT NULL DEFAULT 50,
-    required    BOOLEAN NOT NULL DEFAULT TRUE,
-    placeholder TEXT,
-    value       TEXT,
-    created_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL
-);
-
-
--- ═══════════════════════════════════════════════════════════════════════════════
 --  ROW LEVEL SECURITY (RLS) POLICIES
 --  Ensures users can only access their own data.
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -176,7 +148,6 @@ ALTER TABLE templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sign_forms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sign_form_responses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE signature_fields ENABLE ROW LEVEL SECURITY;
 
 -- ─── Profiles Policies ──────────────────────────────────────────────────────
 CREATE POLICY "Users can view their own profile"
@@ -270,17 +241,6 @@ CREATE POLICY "Anyone can submit a response"
         )
     );
 
--- ─── Signature Fields Policies ──────────────────────────────────────────────
-CREATE POLICY "Document owners can manage signature fields"
-    ON signature_fields FOR ALL
-    USING (
-        EXISTS (
-            SELECT 1 FROM documents
-            WHERE documents.id = signature_fields.document_id
-            AND documents.sender_id = auth.uid()
-        )
-    );
-
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 --  INDEXES for performance
@@ -293,7 +253,6 @@ CREATE INDEX idx_sign_forms_template_id ON sign_forms(template_id);
 CREATE INDEX idx_sign_forms_status ON sign_forms(status);
 CREATE INDEX idx_sign_form_responses_form_id ON sign_form_responses(sign_form_id);
 CREATE INDEX idx_sign_form_responses_status ON sign_form_responses(status);
-CREATE INDEX idx_signature_fields_document_id ON signature_fields(document_id);
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════

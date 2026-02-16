@@ -47,6 +47,7 @@ const App = () => (
               <Route path="/signforms/create" element={<CreateSignForm />} />
               <Route path="/signforms/:id" element={<SignFormDetail />} />
               <Route path="/create-template" element={<CreateTemplate />} />
+              <Route path="/edit-template/:id" element={<CreateTemplate />} />
               <Route path="/sign/:id" element={<SigningInterface />} />
 
               <Route path="*" element={<NotFound />} />

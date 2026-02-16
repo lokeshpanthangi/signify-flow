@@ -4,8 +4,17 @@ SignifyFlow Backend
 FastAPI application entry point.
 """
 
+import sys
+import os
+
+# Ensure backend package is importable from anywhere
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from routes import auth
+from routes import templates
 
 # ─── App Initialization ──────────────────────────────────────────────────────
 app = FastAPI(
@@ -17,15 +26,15 @@ app = FastAPI(
 # ─── CORS Middleware (allow React frontend) ───────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",   # Vite dev server
-        "http://localhost:3000",   # Alternate dev port
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=["*"],  # In production, specify your frontend URL(s) here    
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ─── Include Routers ──────────────────────────────────────────────────────────
+app.include_router(auth.router)
+app.include_router(templates.router)
 
 
 # ─── Health Check ─────────────────────────────────────────────────────────────

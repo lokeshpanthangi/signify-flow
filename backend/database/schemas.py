@@ -6,11 +6,10 @@ These schemas define the shape of data for the entire SignifyFlow platform.
 
 Tables:
   1. profiles        — User profiles (linked to Supabase Auth)
-  2. documents       — Documents sent for signing
-  3. templates       — Reusable document templates
+  2. templates       — Reusable document templates
+  3. documents       — Documents sent for signing
   4. sign_forms      — Shareable signing forms (linked to templates)
   5. sign_form_responses — Individual responses/signatures on sign forms
-  6. signature_fields    — Positioned signature/input fields on documents
 """
 
 from datetime import datetime
@@ -45,16 +44,6 @@ class ResponseStatus(str, Enum):
     EXPIRED = "expired"
 
 
-class FieldType(str, Enum):
-    """Type of signature/input field placed on a document."""
-    SIGNATURE = "signature"
-    INITIAL = "initial"
-    DATE = "date"
-    TEXT = "text"
-    CHECKBOX = "checkbox"
-    DROPDOWN = "dropdown"
-
-
 # ═══════════════════════════════════════════════════════════════════════════════
 #  1. PROFILES TABLE
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -63,9 +52,6 @@ class ProfileBase(BaseModel):
     """Base schema for user profiles."""
     full_name: str = Field(..., min_length=1, max_length=255, description="User's full display name")
     email: EmailStr = Field(..., description="User's email address")
-    avatar_url: Optional[str] = Field(None, description="URL to user's avatar image")
-    company: Optional[str] = Field(None, max_length=255, description="User's company/organization")
-    job_title: Optional[str] = Field(None, max_length=255, description="User's job title")
 
 
 class ProfileCreate(ProfileBase):
@@ -76,9 +62,6 @@ class ProfileCreate(ProfileBase):
 class ProfileUpdate(BaseModel):
     """Schema for updating a profile — all fields optional."""
     full_name: Optional[str] = Field(None, min_length=1, max_length=255)
-    avatar_url: Optional[str] = None
-    company: Optional[str] = Field(None, max_length=255)
-    job_title: Optional[str] = Field(None, max_length=255)
 
 
 class ProfileResponse(ProfileBase):
@@ -101,9 +84,6 @@ class DocumentBase(BaseModel):
     status: DocumentStatus = Field(default=DocumentStatus.PENDING, description="Current signing status")
     recipient_name: str = Field(..., min_length=1, max_length=255, description="Name of the recipient")
     recipient_email: EmailStr = Field(..., description="Email of the recipient")
-    file_url: Optional[str] = Field(None, description="URL to the document file in Supabase Storage")
-    content: Optional[str] = Field(None, description="Document text content (for template-based docs)")
-    notes: Optional[str] = Field(None, description="Optional notes or message for the recipient")
 
 
 class DocumentCreate(DocumentBase):
@@ -117,9 +97,6 @@ class DocumentUpdate(BaseModel):
     status: Optional[DocumentStatus] = None
     recipient_name: Optional[str] = Field(None, min_length=1, max_length=255)
     recipient_email: Optional[EmailStr] = None
-    file_url: Optional[str] = None
-    content: Optional[str] = None
-    notes: Optional[str] = None
 
 
 class DocumentResponse(DocumentBase):
@@ -141,8 +118,8 @@ class TemplateBase(BaseModel):
     """Base schema for document templates."""
     name: str = Field(..., min_length=1, max_length=500, description="Template name")
     category: str = Field(..., min_length=1, max_length=100, description="Template category (Legal, Business, etc.)")
-    content: str = Field(..., description="Template content with placeholders like [Party A]")
-    description: Optional[str] = Field(None, max_length=1000, description="Brief description of the template")
+    content: str = Field(..., description="Template HTML content from the editor")
+    fields_config: Optional[dict] = Field(default=None, description="JSON with recipients and placed signature fields")
 
 
 class TemplateCreate(TemplateBase):
@@ -155,7 +132,7 @@ class TemplateUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=500)
     category: Optional[str] = Field(None, min_length=1, max_length=100)
     content: Optional[str] = None
-    description: Optional[str] = Field(None, max_length=1000)
+    fields_config: Optional[dict] = None
 
 
 class TemplateResponse(TemplateBase):
@@ -220,8 +197,6 @@ class SignFormResponseEntryBase(BaseModel):
     signer_name: str = Field(..., min_length=1, max_length=255, description="Name of the person who signed")
     signer_email: EmailStr = Field(..., description="Email of the signer")
     status: ResponseStatus = Field(default=ResponseStatus.PENDING, description="Status of this response")
-    signature_data: Optional[str] = Field(None, description="JSON string or base64 of the drawn signature")
-    ip_address: Optional[str] = Field(None, description="IP address of the signer for audit trail")
 
 
 class SignFormResponseEntryCreate(SignFormResponseEntryBase):
@@ -234,58 +209,12 @@ class SignFormResponseEntryUpdate(BaseModel):
     status: Optional[ResponseStatus] = None
     signer_name: Optional[str] = Field(None, min_length=1, max_length=255)
     signer_email: Optional[EmailStr] = None
-    signature_data: Optional[str] = None
 
 
 class SignFormResponseEntryResponse(SignFormResponseEntryBase):
     """Schema for response data returned from the database."""
     id: UUID
     signed_at: Optional[datetime] = Field(None, description="Timestamp when the form was signed")
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  6. SIGNATURE FIELDS TABLE
-# ═══════════════════════════════════════════════════════════════════════════════
-
-class SignatureFieldBase(BaseModel):
-    """Base schema for positioned signature/input fields on documents."""
-    document_id: UUID = Field(..., description="Document this field belongs to")
-    field_type: FieldType = Field(..., description="Type of field (signature, initial, date, text, etc.)")
-    page: int = Field(default=1, ge=1, description="Page number the field appears on")
-    x: float = Field(..., ge=0, description="X position (percentage from left)")
-    y: float = Field(..., ge=0, description="Y position (percentage from top)")
-    width: float = Field(default=200, ge=10, description="Field width in pixels")
-    height: float = Field(default=50, ge=10, description="Field height in pixels")
-    required: bool = Field(default=True, description="Whether this field is required")
-    placeholder: Optional[str] = Field(None, max_length=255, description="Placeholder text for text fields")
-    value: Optional[str] = Field(None, description="Filled-in value of the field")
-
-
-class SignatureFieldCreate(SignatureFieldBase):
-    """Schema for creating a new signature field."""
-    pass
-
-
-class SignatureFieldUpdate(BaseModel):
-    """Schema for updating a signature field — all fields optional."""
-    field_type: Optional[FieldType] = None
-    page: Optional[int] = Field(None, ge=1)
-    x: Optional[float] = Field(None, ge=0)
-    y: Optional[float] = Field(None, ge=0)
-    width: Optional[float] = Field(None, ge=10)
-    height: Optional[float] = Field(None, ge=10)
-    required: Optional[bool] = None
-    placeholder: Optional[str] = Field(None, max_length=255)
-    value: Optional[str] = None
-
-
-class SignatureFieldResponse(SignatureFieldBase):
-    """Schema for signature field data returned from the database."""
-    id: UUID
     created_at: datetime
 
     class Config:
