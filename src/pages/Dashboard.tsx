@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -18,10 +18,12 @@ import {
   CheckCircle2,
   Users,
   Zap,
-  Activity
+  Activity,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockSentDocuments, mockReceivedDocuments, mockSignForms, Document, SignForm } from '@/data/mockData';
+import { listSignForms, type SignFormData } from '@/lib/api/signforms';
+import { listDocuments, type DocumentData } from '@/lib/api/documents';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -142,7 +144,15 @@ const DocumentPreview = () => (
   </div>
 );
 
-const DocumentCard = ({ doc, onClick }: { doc: Document, onClick: () => void }) => {
+const DocumentCard = ({ doc, onClick }: { doc: DocumentData, onClick: () => void }) => {
+  const statusColors: Record<string, string> = {
+    signed: 'text-green-600',
+    pending: 'text-amber-600',
+    declined: 'text-red-500',
+    draft: 'text-stone-400',
+  };
+  const dateStr = doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : '';
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
@@ -164,10 +174,9 @@ const DocumentCard = ({ doc, onClick }: { doc: Document, onClick: () => void }) 
           <div className="min-w-0 flex-1 pr-2">
             <h3 className="font-semibold text-stone-800 text-sm truncate" title={doc.name}>{doc.name}</h3>
             <p className="text-[10px] text-stone-600 font-medium mt-0.5">
-              {doc.dateModified} • <span className={cn(
+              {dateStr} • <span className={cn(
                 "uppercase tracking-wide font-bold",
-                doc.status === 'signed' ? "text-green-600" :
-                  doc.status === 'pending' ? "text-amber-600" : "text-red-500"
+                statusColors[doc.status] || 'text-stone-400'
               )}>{doc.status}</span>
             </p>
           </div>
@@ -190,7 +199,7 @@ const DocumentCard = ({ doc, onClick }: { doc: Document, onClick: () => void }) 
   );
 };
 
-const SignFormCard = ({ form, onClick }: { form: SignForm; onClick: () => void }) => (
+const SignFormCard = ({ form, onClick }: { form: SignFormData; onClick: () => void }) => (
   <div
     className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-all group cursor-pointer"
     onClick={onClick}
@@ -207,25 +216,24 @@ const SignFormCard = ({ form, onClick }: { form: SignForm; onClick: () => void }
       </span>
     </div>
     <h3 className="font-semibold text-stone-800 text-lg mb-1">{form.name}</h3>
-    <h3 className="font-semibold text-stone-800 text-lg mb-1">{form.name}</h3>
-    <p className="text-xs text-stone-400 font-medium mb-1 line-clamp-1">{form.description}</p>
-    <p className="text-[10px] text-stone-300 font-medium mb-5">Created {form.dateCreated}</p>
+    <p className="text-xs text-stone-400 font-medium mb-1 line-clamp-1">{form.description || 'No description'}</p>
+    <p className="text-[10px] text-stone-300 font-medium mb-5">Created {new Date(form.created_at).toLocaleDateString()}</p>
 
-    {form.maxResponses && (
+    {form.max_responses && (
       <div className="mb-4">
         <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-green-500 rounded-full transition-all"
-            style={{ width: `${Math.min((form.responses / form.maxResponses) * 100, 100)}%` }}
+            style={{ width: `${Math.min((form.responses_count / form.max_responses) * 100, 100)}%` }}
           />
         </div>
-        <p className="text-[10px] text-stone-400 mt-1 text-right">{form.responses} / {form.maxResponses}</p>
+        <p className="text-[10px] text-stone-400 mt-1 text-right">{form.responses_count} / {form.max_responses}</p>
       </div>
     )}
 
     <div className="flex items-center justify-between pt-4 border-t border-stone-100">
       <div className="flex items-center gap-2">
-        <span className="text-xl font-bold text-stone-800">{form.responses}</span>
+        <span className="text-xl font-bold text-stone-800">{form.responses_count}</span>
         <span className="text-xs text-stone-500 font-medium uppercase tracking-wide">Responses</span>
       </div>
       <span className="text-xs font-semibold text-green-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
@@ -411,18 +419,35 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
+  const [documents, setDocuments] = useState<DocumentData[]>([]);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(true);
+  const [signForms, setSignForms] = useState<SignFormData[]>([]);
+  const [isLoadingForms, setIsLoadingForms] = useState(true);
 
-  const filteredSentDocs = useMemo(() => {
-    return mockSentDocuments.filter(doc =>
-      doc.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const fetchDocs = useCallback(async () => {
+    try {
+      const res = await listDocuments({ search: searchQuery || undefined, limit: 12 });
+      setDocuments(res.documents);
+    } catch { /* silent */ }
+    finally { setIsLoadingDocs(false); }
   }, [searchQuery]);
 
-  const filteredReceivedDocs = useMemo(() => {
-    return mockReceivedDocuments.filter(doc =>
-      doc.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery]);
+  useEffect(() => {
+    setIsLoadingDocs(true);
+    const t = setTimeout(fetchDocs, 300);
+    return () => clearTimeout(t);
+  }, [fetchDocs]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setIsLoadingForms(true);
+        const res = await listSignForms({ limit: 12 });
+        setSignForms(res.sign_forms);
+      } catch { /* silent */ }
+      finally { setIsLoadingForms(false); }
+    })();
+  }, []);
 
   return (
     <div className="flex h-screen bg-[#F9F9F7] font-sans overflow-hidden">
@@ -640,59 +665,37 @@ const Dashboard = () => {
                   <ActionCard
                     icon={Send}
                     label="Send for signatures"
-                    onClick={() => navigate('/sign/new?type=send')}
+                    onClick={() => navigate('/templates')}
                   />
                   <ActionCard
                     icon={PenTool}
                     label="Sign yourself"
-                    onClick={() => navigate('/sign/new?type=self')}
+                    onClick={() => navigate('/signforms')}
                   />
                 </div>
               )}
 
-              {/* Documents Grid - Sent */}
-              {filteredSentDocs.length > 0 && (
-                <section>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-medium text-stone-700 font-sans">Sent Documents</h2>
-                    <button className="text-sm text-green-600 hover:text-green-700 font-medium transition-colors">View all</button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {filteredSentDocs.map((doc) => (
-                      <DocumentCard
-                        key={doc.id}
-                        doc={doc}
-                        onClick={() => navigate(`/sign/${doc.id}`)}
-                      />
-                    ))}
-                  </div>
-                </section>
+              {/* Loading */}
+              {isLoadingDocs && (
+                <div className="flex items-center justify-center py-16 text-stone-400">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
               )}
 
-              {/* Divider (only if we have both types) */}
-              {/* Divider (only if we have both types) */}
-              {/* {filteredSentDocs.length > 0 && filteredReceivedDocs.length > 0 && (
-                <div className="my-12 border-t border-stone-200" />
-              )} */}
-
-              {/* Documents Grid - Received */}
-              {filteredReceivedDocs.length > 0 && (
-                <section className="mt-12">
+              {/* Documents Grid */}
+              {!isLoadingDocs && documents.length > 0 && (
+                <section>
                   <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-medium text-stone-700 font-sans">Shared with me</h2>
-                      <span className="bg-stone-200 text-stone-600 text-xs font-bold px-2 py-0.5 rounded-full">{filteredReceivedDocs.length}</span>
-                    </div>
-                    <button className="text-sm text-green-600 hover:text-green-700 font-medium transition-colors">View all</button>
+                    <h2 className="text-lg font-medium text-stone-700 font-sans">My Documents</h2>
+                    <button onClick={() => navigate('/documents')} className="text-sm text-green-600 hover:text-green-700 font-medium transition-colors">View all</button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {filteredReceivedDocs.map((doc) => (
+                    {documents.map((doc) => (
                       <DocumentCard
                         key={doc.id}
                         doc={doc}
-                        onClick={() => navigate(`/sign/${doc.id}`)}
+                        onClick={() => navigate(`/edit-document/${doc.id}`)}
                       />
                     ))}
                   </div>
@@ -700,7 +703,7 @@ const Dashboard = () => {
               )}
 
               {/* Empty State */}
-              {filteredSentDocs.length === 0 && filteredReceivedDocs.length === 0 && (
+              {!isLoadingDocs && documents.length === 0 && (
                 <div className="flex-1 flex flex-col items-center justify-center text-stone-400 mt-20">
                   <Search className="h-16 w-16 mb-4 opacity-20" />
                   <p className="text-lg font-medium">No documents found</p>
@@ -728,9 +731,19 @@ const Dashboard = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-                {mockSignForms.map((form) => (
-                  <SignFormCard key={form.id} form={form} onClick={() => navigate(`/signforms/${form.id}`)} />
-                ))}
+                {isLoadingForms ? (
+                  <div className="col-span-full flex justify-center py-12">
+                    <Loader2 className="h-6 w-6 animate-spin text-stone-400" />
+                  </div>
+                ) : signForms.length === 0 ? (
+                  <div className="col-span-full text-center py-12 text-stone-400">
+                    <p className="text-sm">No sign forms yet. Create one to get started.</p>
+                  </div>
+                ) : (
+                  signForms.map((form) => (
+                    <SignFormCard key={form.id} form={form} onClick={() => navigate(`/signforms/${form.id}`)} />
+                  ))
+                )}
               </div>
             </section>
           )}

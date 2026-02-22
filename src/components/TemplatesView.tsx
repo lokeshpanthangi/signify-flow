@@ -44,14 +44,14 @@ export const TemplatesView = () => {
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-semibold text-stone-800 font-serif">Templates</h2>
-                    <p className="text-stone-500 text-sm mt-1">
+                    <h2 className="text-2xl font-semibold text-stone-800 dark:text-white font-serif">Templates</h2>
+                    <p className="text-stone-500 dark:text-stone-400 text-sm mt-1">
                         {loading ? 'Loading…' : `${total} template${total !== 1 ? 's' : ''}`}
                     </p>
                 </div>
                 <button
                     onClick={() => navigate('/create-template')}
-                    className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white rounded-lg hover:bg-stone-800 transition-colors shadow-lg shadow-stone-900/20 active:scale-95 duration-200"
+                    className="flex items-center gap-2 px-4 py-2 bg-stone-900 dark:bg-green-600 text-white rounded-lg hover:bg-stone-800 dark:hover:bg-green-500 transition-colors shadow-lg shadow-stone-900/20 dark:shadow-green-600/20 active:scale-95 duration-200"
                 >
                     <Plus className="h-4 w-4" />
                     <span>New Template</span>
@@ -62,17 +62,17 @@ export const TemplatesView = () => {
             {loading && (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
                     <Loader2 className="h-8 w-8 text-green-600 animate-spin" />
-                    <p className="text-sm text-stone-500">Loading templates…</p>
+                    <p className="text-sm text-stone-500 dark:text-stone-400">Loading templates…</p>
                 </div>
             )}
 
             {/* Error state */}
             {error && !loading && (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center">
+                    <div className="h-12 w-12 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
                         <AlertCircle className="h-6 w-6 text-red-500" />
                     </div>
-                    <p className="text-sm text-stone-600">{error}</p>
+                    <p className="text-sm text-stone-600 dark:text-stone-400">{error}</p>
                     <button onClick={fetchTemplates}
                         className="flex items-center gap-2 text-sm text-green-600 hover:text-green-700 font-medium">
                         <RefreshCw className="h-4 w-4" /> Retry
@@ -94,12 +94,12 @@ export const TemplatesView = () => {
                     {/* Create New Card */}
                     <button
                         onClick={() => navigate('/create-template')}
-                        className="group flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-xl hover:border-green-400 hover:bg-green-50/10 transition-all duration-300 bg-transparent h-[320px]"
+                        className="group flex flex-col items-center justify-center border-2 border-dashed border-stone-300 dark:border-[#2A2A32] rounded-xl hover:border-green-400 dark:hover:border-green-500 hover:bg-green-50/10 dark:hover:bg-green-900/10 transition-all duration-300 bg-transparent h-[280px]"
                     >
-                        <div className="h-12 w-12 rounded-full bg-stone-100 flex items-center justify-center mb-4 group-hover:bg-green-100 group-hover:text-green-600 transition-colors">
-                            <Plus className="h-6 w-6 text-stone-400 group-hover:text-green-600" />
+                        <div className="h-12 w-12 rounded-full bg-stone-100 dark:bg-white/5 flex items-center justify-center mb-4 group-hover:bg-green-100 dark:group-hover:bg-green-900/20 group-hover:text-green-600 transition-colors">
+                            <Plus className="h-6 w-6 text-stone-400 group-hover:text-green-600 dark:group-hover:text-green-400" />
                         </div>
-                        <span className="font-medium text-stone-600 group-hover:text-green-700">Create New</span>
+                        <span className="font-medium text-stone-600 dark:text-stone-400 group-hover:text-green-700 dark:group-hover:text-green-400">Create New</span>
                     </button>
                 </div>
             )}
@@ -107,7 +107,7 @@ export const TemplatesView = () => {
             {/* Empty state */}
             {!loading && !error && templates.length === 0 && (
                 <div className="text-center py-12">
-                    <p className="text-stone-500 text-sm">No templates yet. Create your first one!</p>
+                    <p className="text-stone-500 dark:text-stone-400 text-sm">No templates yet. Create your first one!</p>
                 </div>
             )}
         </div>

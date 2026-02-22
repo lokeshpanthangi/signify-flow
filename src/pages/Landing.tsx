@@ -24,14 +24,14 @@ const FeatureItem = ({ icon: Icon, title, desc, delay }: { icon: any, title: str
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ delay, duration: 0.6 }}
-    className="flex flex-col gap-4 p-6 rounded-2xl bg-white border border-stone-200/60 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group"
+    className="flex flex-col gap-4 p-6 rounded-2xl bg-white dark:bg-[#18181F] border border-stone-200/60 dark:border-[#2A2A32] shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group"
   >
-    <div className="h-12 w-12 rounded-xl bg-[#F9F9F7] flex items-center justify-center text-stone-600 group-hover:bg-green-50 group-hover:text-green-700 transition-colors">
+    <div className="h-12 w-12 rounded-xl bg-[#F9F9F7] dark:bg-[#0E0E13] flex items-center justify-center text-stone-600 dark:text-stone-400 group-hover:bg-green-50 dark:group-hover:bg-green-500/10 group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors">
       <Icon className="h-6 w-6" />
     </div>
     <div>
-      <h3 className="text-xl font-bold font-serif text-stone-900 mb-2">{title}</h3>
-      <p className="text-stone-500 leading-relaxed font-sans">{desc}</p>
+      <h3 className="text-xl font-bold font-serif text-stone-900 dark:text-white mb-2">{title}</h3>
+      <p className="text-stone-500 dark:text-stone-400 leading-relaxed font-sans">{desc}</p>
     </div>
   </motion.div>
 );
@@ -117,7 +117,7 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7] text-stone-800 font-sans selection:bg-stone-200 selection:text-stone-900">
+    <div className="min-h-screen bg-[#F9F9F7] dark:bg-[#0E0E13] text-stone-800 dark:text-stone-200 font-sans selection:bg-stone-200 dark:selection:bg-stone-700 selection:text-stone-900 dark:selection:text-white">
       <Navbar />
 
       <main>
@@ -137,29 +137,29 @@ const Landing = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-stone-200 shadow-sm mb-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#18181F] border border-stone-200 dark:border-[#2A2A32] shadow-sm mb-8">
                 <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xs font-semibold tracking-wide uppercase text-stone-500">The New Standard</span>
+                <span className="text-xs font-semibold tracking-wide uppercase text-stone-500 dark:text-stone-400">The New Standard</span>
               </div>
 
-              <h1 className="text-6xl md:text-7xl lg:text-8xl font-serif font-medium text-stone-900 tracking-tight leading-[1.1] mb-8">
+              <h1 className="text-6xl md:text-7xl lg:text-8xl font-serif font-medium text-stone-900 dark:text-white tracking-tight leading-[1.1] mb-8">
                 Signatures, <br />
-                <span className="italic text-stone-500 font-serif">Reimagined.</span>
+                <span className="italic text-stone-500 dark:text-stone-400 font-serif">Reimagined.</span>
               </h1>
 
-              <p className="max-w-2xl mx-auto text-xl md:text-2xl text-stone-500 font-light leading-relaxed mb-12">
+              <p className="max-w-2xl mx-auto text-xl md:text-2xl text-stone-500 dark:text-stone-400 font-light leading-relaxed mb-12">
                 Experience the fluidity of ink with the speed of digital.
                 Secure, legally binding, and effortlessly elegant.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                 <Link to="/auth?mode=signup">
-                  <Button size="xl" className="h-16 px-10 rounded-full bg-stone-900 text-white hover:bg-stone-800 text-lg shadow-xl shadow-stone-900/10 transition-all hover:scale-105">
+                  <Button size="xl" className="h-16 px-10 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-stone-100 text-lg shadow-xl shadow-stone-900/10 transition-all hover:scale-105">
                     Start Free Trial
                   </Button>
                 </Link>
                 <Link to="/demo">
-                  <Button variant="outline" size="xl" className="h-16 px-10 rounded-full border-stone-300 text-stone-600 hover:bg-white hover:text-stone-900 text-lg bg-transparent">
+                  <Button variant="outline" size="xl" className="h-16 px-10 rounded-full border-stone-300 dark:border-[#2A2A32] text-stone-600 dark:text-stone-300 hover:bg-white dark:hover:bg-white/5 hover:text-stone-900 dark:hover:text-white text-lg bg-transparent">
                     View Demo
                   </Button>
                 </Link>
@@ -220,28 +220,28 @@ const Landing = () => {
         </section>
 
         {/* --- Trusted section --- */}
-        <section className="py-12 border-y border-stone-200 bg-[#F9F9F7]">
+        <section className="py-12 border-y border-stone-200 dark:border-[#2A2A32] bg-[#F9F9F7] dark:bg-[#0E0E13]">
           <div className="container mx-auto px-4 text-center">
             <p className="text-sm font-semibold text-stone-400 uppercase tracking-[0.2em] mb-8">Trusted by Global Leaders</p>
             <div className="flex flex-wrap justify-center gap-8 md:gap-24 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
               {['Acme', 'Horizon', 'Stark', 'Wayne', 'Cyberdyne'].map((logo) => (
-                <span key={logo} className="text-xl md:text-2xl font-serif font-bold text-stone-800">{logo} Imports</span>
+                <span key={logo} className="text-xl md:text-2xl font-serif font-bold text-stone-800 dark:text-stone-200">{logo} Imports</span>
               ))}
             </div>
           </div>
         </section>
 
         {/* --- Timeline Section (New) --- */}
-        <div className="w-full bg-[#F9F9F7]">
+        <div className="w-full bg-[#F9F9F7] dark:bg-[#0E0E13]">
           <Timeline data={timelineData} />
         </div>
 
         {/* --- Features Grid --- */}
-        <section className="py-32 bg-[#F9F9F7]">
+        <section className="py-32 bg-[#F9F9F7] dark:bg-[#0E0E13]">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-2xl mx-auto mb-20">
-              <h2 className="text-4xl md:text-5xl font-serif font-medium text-stone-900 mb-6">Designed for Focus</h2>
-              <p className="text-xl text-stone-500 font-light">Eliminate the noise. SignFlow provides the essential tools you need in an interface you'll actually enjoy using.</p>
+              <h2 className="text-4xl md:text-5xl font-serif font-medium text-stone-900 dark:text-white mb-6">Designed for Focus</h2>
+              <p className="text-xl text-stone-500 dark:text-stone-400 font-light">Eliminate the noise. SignFlow provides the essential tools you need in an interface you'll actually enjoy using.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -286,13 +286,13 @@ const Landing = () => {
         </section>
 
         {/* --- Stats Display --- */}
-        <section className="py-20 bg-white border border-stone-200 rounded-3xl mx-4 lg:mx-8 mb-20 shadow-sm overflow-hidden relative">
+        <section className="py-20 bg-white dark:bg-[#18181F] border border-stone-200 dark:border-[#2A2A32] rounded-3xl mx-4 lg:mx-8 mb-20 shadow-sm overflow-hidden relative">
 
           <div className="container mx-auto px-4 relative z-10">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
               <div className="lg:w-1/3">
-                <h2 className="text-3xl md:text-4xl font-serif mb-4 text-stone-900">Impact by the numbers</h2>
-                <p className="text-stone-500 font-light leading-relaxed">
+                <h2 className="text-3xl md:text-4xl font-serif mb-4 text-stone-900 dark:text-white">Impact by the numbers</h2>
+                <p className="text-stone-500 dark:text-stone-400 font-light leading-relaxed">
                   We handle millions of secure transactions daily for freelancers, startups, and expansive enterprises.
                 </p>
               </div>
@@ -304,7 +304,7 @@ const Landing = () => {
                   { k: '24/7', l: 'Support' }
                 ].map((stat) => (
                   <div key={stat.l}>
-                    <div className="text-4xl font-bold font-serif mb-1 text-stone-900">{stat.k}</div>
+                    <div className="text-4xl font-bold font-serif mb-1 text-stone-900 dark:text-white">{stat.k}</div>
                     <div className="text-sm text-stone-400 uppercase tracking-widest">{stat.l}</div>
                   </div>
                 ))}
@@ -314,11 +314,11 @@ const Landing = () => {
         </section>
 
         {/* --- CTA --- */}
-        <section className="py-32 bg-[#F9F9F7] border-t border-stone-200">
+        <section className="py-32 bg-[#F9F9F7] dark:bg-[#0E0E13] border-t border-stone-200 dark:border-[#2A2A32]">
           <div className="container mx-auto px-4 text-center">
             <div className="max-w-3xl mx-auto">
-              <h2 className="text-5xl md:text-6xl font-serif text-stone-900 mb-8">Ready to sign?</h2>
-              <p className="text-xl text-stone-500 font-light mb-12">
+              <h2 className="text-5xl md:text-6xl font-serif text-stone-900 dark:text-white mb-8">Ready to sign?</h2>
+              <p className="text-xl text-stone-500 dark:text-stone-400 font-light mb-12">
                 Join the new era of digital documentation. Elegant, fast, and secure.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -328,7 +328,7 @@ const Landing = () => {
                   </Button>
                 </Link>
                 <Link to="/contact">
-                  <Button variant="outline" className="h-14 px-8 rounded-full border-stone-200 hover:bg-white text-stone-600 font-medium text-lg w-full sm:w-auto bg-transparent">
+                  <Button variant="outline" className="h-14 px-8 rounded-full border-stone-200 dark:border-[#2A2A32] hover:bg-white dark:hover:bg-white/5 text-stone-600 dark:text-stone-300 font-medium text-lg w-full sm:w-auto bg-transparent">
                     Contact Sales
                   </Button>
                 </Link>
@@ -339,12 +339,12 @@ const Landing = () => {
         </section>
 
         {/* --- Footer --- */}
-        <footer className="border-t border-stone-200 bg-[#F9F9F7] pt-16 pb-8">
+        <footer className="border-t border-stone-200 dark:border-[#2A2A32] bg-[#F9F9F7] dark:bg-[#0E0E13] pt-16 pb-8">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
               <div className="col-span-2 lg:col-span-2">
                 <Link to="/" className="flex items-center gap-2 mb-4">
-                  <span className="text-2xl font-normal text-stone-800" style={{ fontFamily: "'Great Vibes', cursive" }}>SignFlow</span>
+                  <span className="text-2xl font-normal text-stone-800 dark:text-white" style={{ fontFamily: "'Great Vibes', cursive" }}>SignFlow</span>
                 </Link>
                 <p className="text-stone-500 max-w-xs mb-6 text-sm">
                   The secure, fast, and legal way to get documents signed online. Built for modern business.
@@ -352,8 +352,8 @@ const Landing = () => {
               </div>
 
               <div>
-                <h4 className="font-semibold mb-4 text-stone-800">Product</h4>
-                <ul className="space-y-3 text-sm text-stone-500">
+                <h4 className="font-semibold mb-4 text-stone-800 dark:text-stone-200">Product</h4>
+                <ul className="space-y-3 text-sm text-stone-500 dark:text-stone-400">
                   <li><Link to="#" className="hover:text-green-600">Features</Link></li>
                   <li><Link to="#" className="hover:text-green-600">Pricing</Link></li>
                   <li><Link to="#" className="hover:text-green-600">API</Link></li>
@@ -361,8 +361,8 @@ const Landing = () => {
               </div>
 
               <div>
-                <h4 className="font-semibold mb-4 text-stone-800">Company</h4>
-                <ul className="space-y-3 text-sm text-stone-500">
+                <h4 className="font-semibold mb-4 text-stone-800 dark:text-stone-200">Company</h4>
+                <ul className="space-y-3 text-sm text-stone-500 dark:text-stone-400">
                   <li><Link to="#" className="hover:text-green-600">About</Link></li>
                   <li><Link to="#" className="hover:text-green-600">Careers</Link></li>
                   <li><Link to="#" className="hover:text-green-600">Contact</Link></li>
@@ -370,15 +370,15 @@ const Landing = () => {
               </div>
 
               <div>
-                <h4 className="font-semibold mb-4 text-stone-800">Legal</h4>
-                <ul className="space-y-3 text-sm text-stone-500">
+                <h4 className="font-semibold mb-4 text-stone-800 dark:text-stone-200">Legal</h4>
+                <ul className="space-y-3 text-sm text-stone-500 dark:text-stone-400">
                   <li><Link to="#" className="hover:text-green-600">Privacy</Link></li>
                   <li><Link to="#" className="hover:text-green-600">Terms</Link></li>
                 </ul>
               </div>
             </div>
 
-            <div className="border-t border-stone-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-stone-400">
+            <div className="border-t border-stone-200 dark:border-[#2A2A32] pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-stone-400">
               <div>© 2026 SignFlow Inc.</div>
               <div className="flex gap-6">
                 <Link to="#" className="hover:text-stone-800">Twitter</Link>

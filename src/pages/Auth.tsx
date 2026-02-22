@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Mail,
   Lock,
@@ -138,7 +138,14 @@ const GoogleIcon = () => (
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login, signup } = useAuth();
+  const location = useLocation();
+  const { login, signup, isAuthenticated } = useAuth();
+
+  // If already logged in, redirect to dashboard (or the page they came from)
+  const redirectTo = (location.state as any)?.from?.pathname || '/dashboard';
+  if (isAuthenticated) {
+    navigate(redirectTo, { replace: true });
+  }
 
   const [authMode, setAuthMode] = useState<AuthMode>((searchParams.get('mode') as AuthMode) || 'login');
   const [showPassword, setShowPassword] = useState(false);
@@ -250,7 +257,7 @@ const Auth = () => {
       }
 
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate(redirectTo, { replace: true });
       }, 1000);
 
     } catch (error: any) {
@@ -269,7 +276,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center relative bg-[#F9F9F7] font-sans">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center relative bg-[#F9F9F7] dark:bg-[#0E0E13] font-sans">
 
       {/* Subtle Background Pattern/Texture if desired, but keeping clean for now */}
 
@@ -279,10 +286,10 @@ const Auth = () => {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8 text-center"
       >
-        <h1 className="text-5xl text-stone-800 font-normal select-none mb-2" style={{ fontFamily: "'Great Vibes', cursive" }}>
+        <h1 className="text-5xl text-stone-800 dark:text-white font-normal select-none mb-2" style={{ fontFamily: "'Great Vibes', cursive" }}>
           SignFlow
         </h1>
-        <p className="text-stone-500 font-medium tracking-wide text-xs uppercase">Secure • Fast • Legally Binding</p>
+        <p className="text-stone-500 dark:text-stone-400 font-medium tracking-wide text-xs uppercase">Secure • Fast • Legally Binding</p>
       </motion.div>
 
       <motion.div
@@ -291,7 +298,7 @@ const Auth = () => {
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="relative z-10 w-full max-w-[350px] mx-4"
       >
-        <div className="bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-stone-200 p-6">
+        <div className="bg-white dark:bg-[#18181F] rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.4)] border border-stone-200 dark:border-[#2A2A32] p-6">
 
           {successMessage && (
             <motion.div
@@ -316,24 +323,24 @@ const Auth = () => {
           )}
 
           <div className="mb-8">
-            <h2 className="text-2xl font-semibold text-stone-800 mb-2">
+            <h2 className="text-2xl font-semibold text-stone-800 dark:text-white mb-2">
               {authMode === 'login' ? 'Welcome back' : 'Get started'}
             </h2>
-            <p className="text-stone-500 text-sm">
+            <p className="text-stone-500 dark:text-stone-400 text-sm">
               {authMode === 'login'
                 ? 'Enter your credentials to access your account'
                 : 'Create your account to start signing documents'}
             </p>
           </div>
 
-          <div className="flex bg-stone-100 rounded-lg p-1 mb-8">
+          <div className="flex bg-stone-100 dark:bg-[#111114] rounded-lg p-1 mb-8">
             <button
               onClick={() => handleModeSwitch('login')}
               className={cn(
                 "flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200",
                 authMode === 'login'
-                  ? "bg-white text-stone-800 shadow-sm"
-                  : "text-stone-500 hover:text-stone-700"
+                  ? "bg-white dark:bg-[#18181F] text-stone-800 dark:text-white shadow-sm"
+                  : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
               )}
             >
               Sign In
@@ -343,8 +350,8 @@ const Auth = () => {
               className={cn(
                 "flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200",
                 authMode === 'signup'
-                  ? "bg-white text-stone-800 shadow-sm"
-                  : "text-stone-500 hover:text-stone-700"
+                  ? "bg-white dark:bg-[#18181F] text-stone-800 dark:text-white shadow-sm"
+                  : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
               )}
             >
               Sign Up
@@ -362,7 +369,7 @@ const Auth = () => {
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5 ml-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-1.5 ml-1">
                     Full Name
                   </label>
                   <div className="relative group">
@@ -374,8 +381,8 @@ const Auth = () => {
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       onBlur={() => handleFieldBlur('name')}
                       className={cn(
-                        "w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm shadow-sm",
-                        errors.name ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-stone-200 hover:border-stone-300"
+                        "w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#111114] border rounded-lg text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm shadow-sm",
+                        errors.name ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-stone-200 dark:border-[#2A2A32] hover:border-stone-300 dark:hover:border-[#3A3A42]"
                       )}
                     />
                   </div>
@@ -390,7 +397,7 @@ const Auth = () => {
             </AnimatePresence>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5 ml-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-1.5 ml-1">
                 Email Address
               </label>
               <div className="relative group">
@@ -402,8 +409,8 @@ const Auth = () => {
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   onBlur={() => handleFieldBlur('email')}
                   className={cn(
-                    "w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm shadow-sm",
-                    errors.email ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-stone-200 hover:border-stone-300"
+                    "w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#111114] border rounded-lg text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm shadow-sm",
+                    errors.email ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-stone-200 dark:border-[#2A2A32] hover:border-stone-300 dark:hover:border-[#3A3A42]"
                   )}
                 />
               </div>
@@ -417,7 +424,7 @@ const Auth = () => {
 
             <div>
               <div className="flex items-center justify-between mb-1.5 ml-1">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
                   Password
                 </label>
                 {authMode === 'login' && (
@@ -438,8 +445,8 @@ const Auth = () => {
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   onBlur={() => handleFieldBlur('password')}
                   className={cn(
-                    "w-full pl-10 pr-10 py-2.5 bg-white border rounded-lg text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm shadow-sm",
-                    errors.password ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-stone-200 hover:border-stone-300"
+                    "w-full pl-10 pr-10 py-2.5 bg-white dark:bg-[#111114] border rounded-lg text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm shadow-sm",
+                    errors.password ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-stone-200 dark:border-[#2A2A32] hover:border-stone-300 dark:hover:border-[#3A3A42]"
                   )}
                 />
                 <button
@@ -471,7 +478,7 @@ const Auth = () => {
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5 ml-1 mt-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-1.5 ml-1 mt-2">
                     Confirm Password
                   </label>
                   <div className="relative group">
@@ -483,8 +490,8 @@ const Auth = () => {
                       onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                       onBlur={() => handleFieldBlur('confirmPassword')}
                       className={cn(
-                        "w-full pl-10 pr-10 py-2.5 bg-white border rounded-lg text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm shadow-sm",
-                        errors.confirmPassword ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-stone-200 hover:border-stone-300"
+                        "w-full pl-10 pr-10 py-2.5 bg-white dark:bg-[#111114] border rounded-lg text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm shadow-sm",
+                        errors.confirmPassword ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-stone-200 dark:border-[#2A2A32] hover:border-stone-300 dark:hover:border-[#3A3A42]"
                       )}
                     />
                     <button
@@ -523,7 +530,7 @@ const Auth = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#1A1C1E] text-white font-medium py-3 px-6 rounded-lg hover:bg-black hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2 shadow-md mt-2"
+              className="w-full bg-[#1A1C1E] dark:bg-green-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-black dark:hover:bg-green-500 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2 shadow-md mt-2"
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -537,31 +544,31 @@ const Auth = () => {
 
             <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-stone-200"></div>
+                <div className="w-full border-t border-stone-200 dark:border-[#2A2A32]"></div>
               </div>
               <div className="relative flex justify-center text-[10px] uppercase tracking-wider font-semibold">
-                <span className="bg-white px-3 text-stone-400">
+                <span className="bg-white dark:bg-[#18181F] px-3 text-stone-400">
                   Or continue with
                 </span>
               </div>
             </div>
 
-            <button
+              <button
               type="button"
-              className="w-full flex items-center justify-center gap-3 bg-white border border-stone-200 text-stone-700 font-medium py-2.5 px-6 rounded-lg hover:bg-stone-50 hover:border-stone-300 transition-all duration-200 shadow-sm"
+              className="w-full flex items-center justify-center gap-3 bg-white dark:bg-[#111114] border border-stone-200 dark:border-[#2A2A32] text-stone-700 dark:text-stone-300 font-medium py-2.5 px-6 rounded-lg hover:bg-stone-50 dark:hover:bg-white/5 hover:border-stone-300 dark:hover:border-[#3A3A42] transition-all duration-200 shadow-sm"
             >
               <GoogleIcon />
               <span className="text-sm">Google</span>
             </button>
           </form>
 
-          <div className="text-center mt-8 pt-6 border-t border-stone-100">
-            <p className="text-sm text-stone-500">
+          <div className="text-center mt-8 pt-6 border-t border-stone-100 dark:border-[#2A2A32]">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {authMode === 'login' ? "Don't have an account? " : "Already have an account? "}
               <button
                 type="button"
                 onClick={() => handleModeSwitch(authMode === 'login' ? 'signup' : 'login')}
-                className="text-stone-800 hover:text-green-700 font-semibold transition-colors"
+                className="text-stone-800 dark:text-white hover:text-green-700 dark:hover:text-green-400 font-semibold transition-colors"
               >
                 {authMode === 'login' ? 'Sign up' : 'Log in'}
               </button>

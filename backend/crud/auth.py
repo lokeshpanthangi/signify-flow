@@ -7,12 +7,14 @@ Database operations for authentication.
 from supabase import Client
 
 
-def signup_user(supabase: Client, email: str, password: str, full_name: str):
+def signup_user(auth_client: Client, email: str, password: str, full_name: str):
     """
     Create a new user with Supabase Auth.
     The profile is auto-created via database trigger.
+    IMPORTANT: must use a *disposable* auth client (get_auth_client()),
+    because sign_up mutates the client's session.
     """
-    auth_response = supabase.auth.sign_up({
+    auth_response = auth_client.auth.sign_up({
         "email": email,
         "password": password,
         "options": {
@@ -24,22 +26,24 @@ def signup_user(supabase: Client, email: str, password: str, full_name: str):
     return auth_response
 
 
-def login_user(supabase: Client, email: str, password: str):
+def login_user(auth_client: Client, email: str, password: str):
     """
     Authenticate user with email and password.
+    IMPORTANT: must use a *disposable* auth client (get_auth_client()),
+    because sign_in mutates the client's session.
     """
-    auth_response = supabase.auth.sign_in_with_password({
+    auth_response = auth_client.auth.sign_in_with_password({
         "email": email,
         "password": password
     })
     return auth_response
 
 
-def logout_user(supabase: Client):
+def logout_user(auth_client: Client):
     """
     Sign out the current user.
     """
-    supabase.auth.sign_out()
+    auth_client.auth.sign_out()
 
 
 def get_user_by_token(supabase: Client, access_token: str):

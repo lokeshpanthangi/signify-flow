@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field, EmailStr
 
 class DocumentStatus(str, Enum):
     """Status of a document in the signing workflow."""
+    DRAFT = "draft"
     SIGNED = "signed"
     PENDING = "pending"
     DECLINED = "declined"
@@ -81,9 +82,10 @@ class ProfileResponse(ProfileBase):
 class DocumentBase(BaseModel):
     """Base schema for documents."""
     name: str = Field(..., min_length=1, max_length=500, description="Document file name")
-    status: DocumentStatus = Field(default=DocumentStatus.PENDING, description="Current signing status")
-    recipient_name: str = Field(..., min_length=1, max_length=255, description="Name of the recipient")
-    recipient_email: EmailStr = Field(..., description="Email of the recipient")
+    content: str = Field(default="", description="HTML content of the document")
+    status: DocumentStatus = Field(default=DocumentStatus.DRAFT, description="Current signing status")
+    recipient_name: Optional[str] = Field(default="", max_length=255, description="Name of the recipient")
+    recipient_email: Optional[EmailStr] = Field(default=None, description="Email of the recipient")
 
 
 class DocumentCreate(DocumentBase):
@@ -94,8 +96,9 @@ class DocumentCreate(DocumentBase):
 class DocumentUpdate(BaseModel):
     """Schema for updating a document — all fields optional."""
     name: Optional[str] = Field(None, min_length=1, max_length=500)
+    content: Optional[str] = None
     status: Optional[DocumentStatus] = None
-    recipient_name: Optional[str] = Field(None, min_length=1, max_length=255)
+    recipient_name: Optional[str] = Field(None, max_length=255)
     recipient_email: Optional[EmailStr] = None
 
 
@@ -108,6 +111,9 @@ class DocumentResponse(DocumentBase):
 
     class Config:
         from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+        }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

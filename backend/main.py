@@ -15,18 +15,21 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routes import auth
 from routes import templates
+from routes import documents
+from routes import signforms
+from config import settings
 
 # ─── App Initialization ──────────────────────────────────────────────────────
 app = FastAPI(
-    title="SignifyFlow API",
+    title=settings.APP_NAME + " API",
     description="Backend API for SignifyFlow — the modern e-signature platform",
-    version="1.0.0",
+    version=settings.APP_VERSION,
 )
 
 # ─── CORS Middleware (allow React frontend) ───────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend URL(s) here    
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,6 +38,8 @@ app.add_middleware(
 # ─── Include Routers ──────────────────────────────────────────────────────────
 app.include_router(auth.router)
 app.include_router(templates.router)
+app.include_router(documents.router)
+app.include_router(signforms.router)
 
 
 # ─── Health Check ─────────────────────────────────────────────────────────────

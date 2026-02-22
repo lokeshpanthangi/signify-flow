@@ -4,7 +4,10 @@
  * Connects the frontend to the /templates backend routes.
  */
 
-const API_URL = 'http://localhost:8000';
+import { config } from '@/config';
+import { onAuthError } from '@/lib/authEvents';
+
+const API_URL = config.API_URL;
 
 function getToken(): string {
     return localStorage.getItem('signify_token') || '';
@@ -17,28 +20,46 @@ function authHeaders(): Record<string, string> {
     };
 }
 
+/** Wrapper around fetch that auto-triggers logout on 401 */
+async function authFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
+    const res = await fetch(input, init);
+    if (res.status === 401) {
+        onAuthError();
+        throw new Error('Session expired. Please log in again.');
+    }
+    return res;
+}
+
 /* ─── Types ─── */
 
+export interface FieldsConfigRecipient {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    color: string;
+    action: 'sign' | 'view' | 'approve';
+    notifyVia: 'email' | 'sms' | 'both';
+}
+
+export interface FieldsConfigField {
+    id: string;
+    type: string;
+    label: string;
+    recipientId: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    required: boolean;
+    page: number;
+    placeholder?: string;
+}
+
 export interface FieldsConfig {
-    recipients: {
-        id: string;
-        name: string;
-        email: string;
-        role: string;
-        color: string;
-    }[];
-    fields: {
-        id: string;
-        type: string;
-        label: string;
-        recipientId: string;
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-        required: boolean;
-        placeholder?: string;
-    }[];
+    sendInOrder: boolean;
+    recipients: FieldsConfigRecipient[];
+    fields: FieldsConfigField[];
 }
 
 export interface TemplateData {
@@ -65,7 +86,7 @@ export async function createTemplate(data: {
     content: string;
     fields_config?: FieldsConfig;
 }): Promise<TemplateData> {
-    const res = await fetch(`${API_URL}/templates`, {
+    const res = await authFetch(`${API_URL}/templates`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify(data),
@@ -88,14 +109,14 @@ export async function listTemplates(params?: {
     if (params?.offset) query.set('offset', String(params.offset));
 
     const url = `${API_URL}/templates${query.toString() ? `?${query}` : ''}`;
-    const res = await fetch(url, { headers: authHeaders() });
+    const res = await authFetch(url, { headers: authHeaders() });
     const json = await res.json();
     if (!res.ok) throw new Error(json.detail || 'Failed to list templates');
     return json;
 }
 
 export async function getTemplate(id: string): Promise<TemplateData> {
-    const res = await fetch(`${API_URL}/templates/${id}`, {
+    const res = await authFetch(`${API_URL}/templates/${id}`, {
         headers: authHeaders(),
     });
     const json = await res.json();
@@ -112,7 +133,7 @@ export async function updateTemplate(
         fields_config?: FieldsConfig;
     },
 ): Promise<TemplateData> {
-    const res = await fetch(`${API_URL}/templates/${id}`, {
+    const res = await authFetch(`${API_URL}/templates/${id}`, {
         method: 'PATCH',
         headers: authHeaders(),
         body: JSON.stringify(data),
@@ -123,7 +144,7 @@ export async function updateTemplate(
 }
 
 export async function deleteTemplate(id: string): Promise<void> {
-    const res = await fetch(`${API_URL}/templates/${id}`, {
+    const res = await authFetch(`${API_URL}/templates/${id}`, {
         method: 'DELETE',
         headers: authHeaders(),
     });

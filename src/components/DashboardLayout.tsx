@@ -12,7 +12,9 @@ import {
     Search
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
+import { Moon, Sun } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -80,6 +82,7 @@ export const DashboardLayout = ({
     const navigate = useNavigate();
     const location = useLocation();
     const [localSearch, setLocalSearch] = useState('');
+    const { resolvedTheme, setTheme } = useTheme();
 
     const currentSearch = onSearchChange ? searchQuery : localSearch;
     const handleSearchChange = onSearchChange || setLocalSearch;
@@ -98,10 +101,10 @@ export const DashboardLayout = ({
     const activeTab = getActiveTab();
 
     return (
-        <div className="flex h-screen bg-[#F9F9F7] font-sans overflow-hidden">
+        <div className="flex h-screen bg-[#F9F9F7] dark:bg-[#0E0E13] font-sans overflow-hidden">
 
             {/* Dark Sidebar */}
-            <aside className="w-[90px] bg-[#1A1C1E] flex flex-col items-center py-4 z-50 shrink-0 shadow-xl">
+            <aside className="w-[90px] bg-[#1A1C1E] dark:bg-[#111114] flex flex-col items-center py-4 z-50 shrink-0 shadow-xl">
                 {/* Top Grid Icon */}
                 <button className="p-3 text-gray-400 hover:text-white mb-6 transition-colors">
                     <Grip className="h-6 w-6" />
@@ -119,6 +122,15 @@ export const DashboardLayout = ({
                         />
                     ))}
                 </nav>
+
+                {/* Theme Toggle */}
+                <button
+                    onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                    className="p-3 text-gray-400 hover:text-white mb-4 transition-colors"
+                    title={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                    {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                </button>
             </aside>
 
             {/* Main Content */}
@@ -130,7 +142,7 @@ export const DashboardLayout = ({
                         {/* Logo - Signature Style */}
                         <div className="flex-shrink-0 pt-2">
                             <h1
-                                className="text-3xl text-stone-800 font-normal select-none cursor-pointer"
+                                className="text-3xl text-stone-800 dark:text-white font-normal select-none cursor-pointer"
                                 style={{ fontFamily: "'Great Vibes', cursive" }}
                                 onClick={() => navigate('/dashboard')}
                             >
@@ -149,7 +161,7 @@ export const DashboardLayout = ({
                                     placeholder="Search documents..."
                                     value={currentSearch}
                                     onChange={(e) => handleSearchChange(e.target.value)}
-                                    className="pl-10 h-11 rounded-full border-stone-200 bg-white shadow-sm hover:shadow-md focus:shadow-lg focus:border-green-500/50 transition-all text-sm"
+                                    className="pl-10 h-11 rounded-full border-stone-200 dark:border-[#2A2A32] bg-white dark:bg-[#18181F] shadow-sm hover:shadow-md focus:shadow-lg focus:border-green-500/50 transition-all text-sm dark:text-stone-200 dark:placeholder:text-stone-500"
                                 />
                             </div>
                         )}
@@ -158,14 +170,14 @@ export const DashboardLayout = ({
                         <div className="flex-shrink-0">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <button className="h-10 w-10 rounded-full bg-gradient-to-tr from-stone-700 to-stone-600 flex items-center justify-center text-white text-xs font-bold border-2 border-stone-500 cursor-pointer shadow-md hover:border-green-500 transition-colors hover:scale-105">
+                                    <button className="h-10 w-10 rounded-full bg-gradient-to-tr from-stone-700 to-stone-600 dark:from-stone-600 dark:to-stone-500 flex items-center justify-center text-white text-xs font-bold border-2 border-stone-500 dark:border-stone-600 cursor-pointer shadow-md hover:border-green-500 transition-colors hover:scale-105">
                                         {user?.name?.[0] || 'U'}
                                     </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => navigate('/settings')}>Profile</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => navigate('/settings')}>Settings</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => { localStorage.clear(); navigate('/auth?mode=login'); }} className="text-red-600">Logout</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => { localStorage.clear(); navigate('/auth?mode=login'); }} className="text-red-600 dark:text-red-400">Logout</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>

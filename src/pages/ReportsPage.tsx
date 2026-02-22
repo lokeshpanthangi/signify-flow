@@ -34,17 +34,17 @@ const KPICard = ({ title, value, change, icon: Icon, delay }: { title: string, v
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay, duration: 0.5 }}
-        className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm flex items-start justify-between hover:shadow-md transition-shadow"
+        className="bg-white dark:bg-[#18181F] p-6 rounded-xl border border-stone-200 dark:border-[#2A2A32] shadow-sm flex items-start justify-between hover:shadow-md transition-shadow"
     >
         <div>
-            <p className="text-sm font-medium text-stone-500 mb-1">{title}</p>
-            <h3 className="text-3xl font-bold text-stone-800 font-serif">{value}</h3>
-            <p className="text-xs font-medium text-green-600 mt-2 flex items-center gap-1 bg-green-50 w-fit px-2 py-1 rounded-full">
+            <p className="text-sm font-medium text-stone-500 dark:text-stone-400 mb-1">{title}</p>
+            <h3 className="text-3xl font-bold text-stone-800 dark:text-white font-serif">{value}</h3>
+            <p className="text-xs font-medium text-green-600 dark:text-green-400 mt-2 flex items-center gap-1 bg-green-50 dark:bg-green-900/20 w-fit px-2 py-1 rounded-full">
                 <TrendingUp className="h-3 w-3" />
                 {change}
             </p>
         </div>
-        <div className="p-3 bg-stone-50 rounded-xl text-stone-600 border border-stone-100">
+        <div className="p-3 bg-stone-50 dark:bg-white/5 rounded-xl text-stone-600 dark:text-stone-400 border border-stone-100 dark:border-[#2A2A32]">
             <Icon className="h-5 w-5" />
         </div>
     </motion.div>
@@ -127,7 +127,7 @@ const DocumentDistribution = () => {
             </ResponsiveContainer>
             {/* Center Text */}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center pointer-events-none">
-                <div className="text-2xl font-bold text-stone-800 font-serif">1,100</div>
+                <div className="text-2xl font-bold text-stone-800 dark:text-white font-serif">1,100</div>
                 <div className="text-[10px] text-stone-400 uppercase tracking-widest font-medium">Total</div>
             </div>
         </div>
@@ -201,8 +201,8 @@ const ReportsPage = () => {
         <DashboardLayout showSearch={false}>
             <div className="space-y-8 animate-in fade-in duration-500">
                 <div>
-                    <h2 className="text-3xl font-serif text-stone-900 mb-2">Reports & Analytics</h2>
-                    <p className="text-stone-500 text-sm">Track your document performance and team efficiency.</p>
+                    <h2 className="text-3xl font-serif text-stone-900 dark:text-white mb-2">Reports & Analytics</h2>
+                    <p className="text-stone-500 dark:text-stone-400 text-sm">Track your document performance and team efficiency.</p>
                 </div>
 
                 {/* KPI Grid */}
@@ -219,15 +219,15 @@ const ReportsPage = () => {
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.5 }}
-                        className="lg:col-span-2 bg-white p-6 rounded-xl border border-stone-200 shadow-sm"
+                        className="lg:col-span-2 bg-white dark:bg-[#18181F] p-6 rounded-xl border border-stone-200 dark:border-[#2A2A32] shadow-sm"
                     >
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h3 className="font-semibold text-stone-800 text-lg">Activity Overview</h3>
+                                <h3 className="font-semibold text-stone-800 dark:text-white text-lg">Activity Overview</h3>
                                 <p className="text-xs text-stone-400">Total documents sent vs signed</p>
                             </div>
                             <div className="flex gap-2">
-                                <span className="text-xs font-medium text-stone-500 bg-stone-100 px-3 py-1 rounded-full border border-stone-200">Last 30 Days</span>
+                                <span className="text-xs font-medium text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-white/10 px-3 py-1 rounded-full border border-stone-200 dark:border-[#2A2A32]">Last 30 Days</span>
                             </div>
                         </div>
                         <ActivityChart />
@@ -238,20 +238,20 @@ const ReportsPage = () => {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.6 }}
-                        className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm flex flex-col items-center justify-center"
+                        className="bg-white dark:bg-[#18181F] p-6 rounded-xl border border-stone-200 dark:border-[#2A2A32] shadow-sm flex flex-col items-center justify-center"
                     >
-                        <h3 className="font-semibold text-stone-800 mb-2 self-start w-full">Distribution</h3>
+                        <h3 className="font-semibold text-stone-800 dark:text-white mb-2 self-start w-full">Distribution</h3>
                         <DocumentDistribution />
 
                         {/* Legend */}
                         <div className="flex flex-wrap gap-4 mt-2 justify-center">
-                            <div className="flex items-center gap-2 text-xs font-medium text-stone-500">
+                            <div className="flex items-center gap-2 text-xs font-medium text-stone-500 dark:text-stone-400">
                                 <span className="block w-2 h-2 rounded-full bg-green-600" /> Contracts
                             </div>
-                            <div className="flex items-center gap-2 text-xs font-medium text-stone-500">
-                                <span className="block w-2 h-2 rounded-full bg-stone-800" /> NDAs
+                            <div className="flex items-center gap-2 text-xs font-medium text-stone-500 dark:text-stone-400">
+                                <span className="block w-2 h-2 rounded-full bg-stone-800 dark:bg-stone-300" /> NDAs
                             </div>
-                            <div className="flex items-center gap-2 text-xs font-medium text-stone-500">
+                            <div className="flex items-center gap-2 text-xs font-medium text-stone-500 dark:text-stone-400">
                                 <span className="block w-2 h-2 rounded-full bg-stone-400" /> Proposals
                             </div>
                         </div>
@@ -262,9 +262,9 @@ const ReportsPage = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.7 }}
-                        className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm"
+                        className="bg-white dark:bg-[#18181F] p-6 rounded-xl border border-stone-200 dark:border-[#2A2A32] shadow-sm"
                     >
-                        <h3 className="font-semibold text-stone-800 mb-2">Completion Velocity</h3>
+                        <h3 className="font-semibold text-stone-800 dark:text-white mb-2">Completion Velocity</h3>
                         <p className="text-xs text-stone-400 mb-4">Signatures collected per day</p>
                         <VelocityChart />
                     </motion.div>
@@ -274,31 +274,31 @@ const ReportsPage = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.8 }}
-                        className="lg:col-span-2 bg-white p-6 rounded-xl border border-stone-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8 items-center"
+                        className="lg:col-span-2 bg-white dark:bg-[#18181F] p-6 rounded-xl border border-stone-200 dark:border-[#2A2A32] shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8 items-center"
                     >
                         <div>
-                            <h3 className="font-semibold text-stone-800 mb-2 font-serif text-xl">Team Performance</h3>
-                            <p className="text-sm text-stone-500 mb-6 leading-relaxed">
+                            <h3 className="font-semibold text-stone-800 dark:text-white mb-2 font-serif text-xl">Team Performance</h3>
+                            <p className="text-sm text-stone-500 dark:text-stone-400 mb-6 leading-relaxed">
                                 Your team is performing exceptionally well in <strong>Security</strong> and <strong>Volume</strong> metrics.
                                 Consider improving collaboration times to boost overall efficiency.
                             </p>
                             <div className="space-y-4">
                                 <div>
-                                    <div className="flex justify-between text-xs font-medium text-stone-600 mb-1">
+                                    <div className="flex justify-between text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">
                                         <span>Security Compliance</span>
                                         <span>98%</span>
                                     </div>
-                                    <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
+                                    <div className="h-2 w-full bg-stone-100 dark:bg-white/10 rounded-full overflow-hidden">
                                         <motion.div initial={{ width: 0 }} animate={{ width: '98%' }} transition={{ duration: 1, delay: 1 }} className="h-full bg-green-600 rounded-full" />
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="flex justify-between text-xs font-medium text-stone-600 mb-1">
+                                    <div className="flex justify-between text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">
                                         <span>Turnaround Time</span>
                                         <span>85%</span>
                                     </div>
-                                    <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
-                                        <motion.div initial={{ width: 0 }} animate={{ width: '85%' }} transition={{ duration: 1, delay: 1.2 }} className="h-full bg-stone-800 rounded-full" />
+                                    <div className="h-2 w-full bg-stone-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                        <motion.div initial={{ width: 0 }} animate={{ width: '85%' }} transition={{ duration: 1, delay: 1.2 }} className="h-full bg-stone-800 dark:bg-stone-300 rounded-full" />
                                     </div>
                                 </div>
                             </div>
