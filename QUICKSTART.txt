@@ -1,0 +1,110 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║                  🚀 SignifyFlow EC2 Deployment Quick Start                   ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+STEP 1: SSH into your EC2 instance
+──────────────────────────────────────────────────────────────────────────────
+ssh -i your-key.pem ubuntu@13.233.57.169
+
+
+STEP 2: Clone/Update the repository
+──────────────────────────────────────────────────────────────────────────────
+cd ~
+git clone https://github.com/lokeshpanthangi/signify-flow.git
+cd signify-flow
+
+# If already cloned, update it:
+git pull origin main
+
+
+STEP 3: Run the deployment script
+──────────────────────────────────────────────────────────────────────────────
+./deploy-ec2.sh
+
+# When prompted, enter: 13.233.57.169
+# The script will:
+#   ✓ Install Python 3.11+, Node.js 20+
+#   ✓ Install all dependencies
+#   ✓ Update .env files with your IP
+#   ✓ Start backend (port 8081) and frontend (port 8080)
+
+
+STEP 4: Configure AWS Security Group
+──────────────────────────────────────────────────────────────────────────────
+Go to: EC2 Console → Security Groups → Select your instance's SG
+
+Add these inbound rules:
+  • Type: Custom TCP, Port: 8080, Source: 0.0.0.0/0  (Frontend)
+  • Type: Custom TCP, Port: 8081, Source: 0.0.0.0/0  (Backend API)
+  • Type: SSH,        Port: 22,   Source: Your IP   (SSH)
+
+
+STEP 5: Access your application
+──────────────────────────────────────────────────────────────────────────────
+Frontend:  http://13.233.57.169:8080
+Backend:   http://13.233.57.169:8081
+API Docs:  http://13.233.57.169:8081/docs
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                            Useful Commands
+═══════════════════════════════════════════════════════════════════════════════
+
+Check if services are running:
+  ./check-status.sh
+
+Stop all services:
+  ./stop-services.sh
+
+View logs:
+  tail -f logs/backend.log
+  tail -f logs/frontend.log
+
+Restart services:
+  ./stop-services.sh
+  ./deploy-ec2.sh
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                         Troubleshooting Login Issue
+═══════════════════════════════════════════════════════════════════════════════
+
+If login doesn't work after deployment:
+
+1. Verify frontend .env file:
+   cat .env | grep VITE_API_URL
+   
+   Should show: VITE_API_URL=http://13.233.57.169:8081
+   
+2. If it shows wrong port (8080), the script will fix it automatically
+   
+3. Restart services:
+   ./stop-services.sh
+   ./deploy-ec2.sh
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                        Production (Persistent Processes)
+═══════════════════════════════════════════════════════════════════════════════
+
+Install PM2 for production:
+  sudo npm install -g pm2
+  ./stop-services.sh
+  
+  cd backend
+  pm2 start "python3 -m uvicorn main:app --host 0.0.0.0 --port 8081" --name backend
+  
+  cd ..
+  pm2 start "npm run dev -- --host 0.0.0.0 --port 8080" --name frontend
+  
+  pm2 save
+  pm2 startup
+  pm2 list
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📖 Full guide: See EC2_DEPLOYMENT.md
+
