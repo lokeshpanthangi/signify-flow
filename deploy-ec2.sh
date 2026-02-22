@@ -1,417 +1,359 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SignifyFlow EC2 Deployment Script
+# SignifyFlow — EC2 A-to-Z Deployment Script
 # ═══════════════════════════════════════════════════════════════════════════════
-# This script automates the complete setup of SignifyFlow on an AWS EC2 instance.
 #
-# What it does:
-# 1. Prompts for your EC2 public IP address
-# 2. Installs all system dependencies (Python 3.11+, Node.js 20+, npm)
-# 3. Installs Python packages (FastAPI, Supabase, etc.)
-# 4. Installs frontend packages (React, Vite, etc.)
-# 5. Updates .env files with correct IP addresses
-# 6. Starts backend (port 8081) and frontend (port 8080)
+# One script to rule them all.
+# User clones the repo, runs this, and EVERYTHING is done:
+#
+#   1.  Asks for EC2 public IP
+#   2.  Installs system packages (Python 3, Node 20, git, lsof)
+#   3.  Installs python3-venv, creates a Python virtual environment
+#   4.  Installs Python packages inside the venv
+#   5.  Creates BOTH .env files from scratch (frontend + backend) with correct IP
+#   6.  Installs Node.js / npm packages
+#   7.  Kills anything already on ports 8080 & 8081
+#   8.  Starts backend  via nohup (uvicorn, --host 0.0.0.0 --port 8081)
+#   9.  Starts frontend via nohup (vite,    --host 0.0.0.0 --port 8080)
+#   10. Prints URLs, PIDs, and next steps
 #
 # Usage:
-#   chmod +x deploy-ec2.sh
-#   ./deploy-ec2.sh
-#
-# After running, access your app at: http://YOUR_EC2_IP:8080
+#   chmod +x deploy-ec2.sh && ./deploy-ec2.sh
 # ═══════════════════════════════════════════════════════════════════════════════
 
-set -e  # Exit on any error
+set -euo pipefail
 
-# Color codes for pretty output
+# ─── Colors ───────────────────────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+NC='\033[0m'
 
-# ─── Helper Functions ─────────────────────────────────────────────────────────
+info()    { echo -e "${BLUE}ℹ${NC}  $1"; }
+ok()      { echo -e "${GREEN}✓${NC}  $1"; }
+warn()    { echo -e "${YELLOW}⚠${NC}  $1"; }
+fail()    { echo -e "${RED}✗${NC}  $1"; }
+step()    { echo ""; echo -e "${CYAN}━━━ $1 ━━━${NC}"; }
+has()     { command -v "$1" >/dev/null 2>&1; }
 
-log_info() {
-    echo -e "${BLUE}ℹ${NC}  $1"
-}
+# ─── Project Root ─────────────────────────────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+PROJECT_DIR="$SCRIPT_DIR"
 
-log_success() {
-    echo -e "${GREEN}✓${NC}  $1"
-}
-
-log_warning() {
-    echo -e "${YELLOW}⚠${NC}  $1"
-}
-
-log_error() {
-    echo -e "${RED}✗${NC}  $1"
-}
-
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-# ─── Welcome Banner ───────────────────────────────────────────────────────────
-
+# ─── Banner ───────────────────────────────────────────────────────────────────
 clear
-echo -e "${BLUE}"
-cat << "EOF"
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                                                                           ║
-║   ███████╗██╗ ██████╗ ███╗   ██╗██╗███████╗██╗   ██╗███████╗██╗          ║
-║   ██╔════╝██║██╔════╝ ████╗  ██║██║██╔════╝╚██╗ ██╔╝██╔════╝██║          ║
-║   ███████╗██║██║  ███╗██╔██╗ ██║██║█████╗   ╚████╔╝ █████╗  ██║          ║
-║   ╚════██║██║██║   ██║██║╚██╗██║██║██╔══╝    ╚██╔╝  ██╔══╝  ██║          ║
-║   ███████║██║╚██████╔╝██║ ╚████║██║██║        ██║   ██║     ███████╗     ║
-║   ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝╚═╝        ╚═╝   ╚═╝     ╚══════╝     ║
-║                                                                           ║
-║                        EC2 Deployment Script                              ║
-║                                                                           ║
-╚═══════════════════════════════════════════════════════════════════════════╝
-EOF
+echo -e "${CYAN}"
+echo "╔═══════════════════════════════════════════════════════════════════╗"
+echo "║         SignifyFlow  —  EC2 A-to-Z Deployment                   ║"
+echo "╚═══════════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-# ─── Prompt for EC2 IP ────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 1 — Ask for EC2 IP
+# ═══════════════════════════════════════════════════════════════════════════════
+step "STEP 1/10 — EC2 Public IP"
 
 echo ""
-log_info "Enter your EC2 Public IP address (e.g., 13.233.57.169):"
-read -p "EC2 IP: " EC2_IP
+info "Enter your EC2 Public IP (e.g. 13.233.57.169):"
+read -rp "  → IP: " EC2_IP
 
-# Validate IP format
-if [[ ! $EC2_IP =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-    log_error "Invalid IP address format. Please run the script again."
+if [[ ! "$EC2_IP" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    fail "Invalid IP format. Run the script again."
     exit 1
 fi
+ok "Using IP: $EC2_IP"
 
-log_success "Using EC2 IP: $EC2_IP"
-echo ""
-
-# ─── Detect OS & Package Manager ──────────────────────────────────────────────
-
-log_info "Detecting operating system..."
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 2 — Detect OS & update packages
+# ═══════════════════════════════════════════════════════════════════════════════
+step "STEP 2/10 — System Update"
 
 if [ -f /etc/os-release ]; then
+    # shellcheck disable=SC1091
     . /etc/os-release
-    OS=$ID
-    log_success "Detected OS: $PRETTY_NAME"
+    OS="$ID"
+    ok "OS: $PRETTY_NAME"
 else
-    log_error "Cannot detect OS. This script supports Ubuntu/Debian and Amazon Linux."
+    fail "Cannot detect OS. Supports Ubuntu/Debian/Amazon Linux."
     exit 1
 fi
 
-# Set package manager based on OS
-if [[ "$OS" == "ubuntu" ]] || [[ "$OS" == "debian" ]]; then
-    PKG_MANAGER="apt-get"
-    PKG_UPDATE="sudo apt-get update -qq"
-    PKG_INSTALL="sudo apt-get install -y -qq"
-elif [[ "$OS" == "amzn" ]] || [[ "$OS" == "rhel" ]] || [[ "$OS" == "centos" ]]; then
-    PKG_MANAGER="yum"
-    PKG_UPDATE="sudo yum update -y -q"
-    PKG_INSTALL="sudo yum install -y -q"
+if [[ "$OS" == "ubuntu" || "$OS" == "debian" ]]; then
+    PM="apt-get"
+    sudo apt-get update -qq > /dev/null 2>&1 && ok "apt updated" || warn "apt update failed (continuing)"
+elif [[ "$OS" == "amzn" || "$OS" == "rhel" || "$OS" == "centos" ]]; then
+    PM="yum"
+    sudo yum update -y -q > /dev/null 2>&1 && ok "yum updated" || warn "yum update failed (continuing)"
 else
-    log_error "Unsupported OS: $OS"
+    fail "Unsupported OS: $OS"
     exit 1
 fi
 
-echo ""
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 3 — Install Python 3, pip, venv, lsof, curl, git
+# ═══════════════════════════════════════════════════════════════════════════════
+step "STEP 3/10 — Install System Packages"
 
-# ─── Update System Packages ───────────────────────────────────────────────────
-
-log_info "Updating system packages..."
-if $PKG_UPDATE > /dev/null 2>&1; then
-    log_success "System packages updated"
+if [[ "$PM" == "apt-get" ]]; then
+    sudo apt-get install -y -qq python3 python3-pip python3-venv git curl lsof > /dev/null 2>&1
 else
-    log_warning "Failed to update packages (continuing anyway)"
+    sudo yum install -y -q python3 python3-pip git curl lsof > /dev/null 2>&1
 fi
 
-echo ""
+# Verify python3
+if has python3; then
+    ok "Python $(python3 --version 2>&1 | cut -d' ' -f2)"
+else
+    fail "python3 not found after install. Aborting."
+    exit 1
+fi
 
-# ─── Install Python 3.9+ ──────────────────────────────────────────────────────
+ok "pip $(pip3 --version 2>&1 | awk '{print $2}')"
 
-log_info "Checking Python installation..."
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 4 — Install Node.js 20 LTS (if missing or too old)
+# ═══════════════════════════════════════════════════════════════════════════════
+step "STEP 4/10 — Install Node.js 20"
 
-if command_exists python3; then
-    PYTHON_VERSION=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)
-    PYTHON_MAJOR=$(echo "$PYTHON_VERSION" | cut -d'.' -f1)
-    PYTHON_MINOR=$(echo "$PYTHON_VERSION" | cut -d'.' -f2)
-    log_success "Python $PYTHON_VERSION found"
-    
-    # Check if version is >= 3.9 using simple integer comparison
-    if [[ "$PYTHON_MAJOR" -ge 3 ]] && [[ "$PYTHON_MINOR" -ge 9 ]]; then
-        log_success "Python version is compatible"
+NEED_NODE=false
+if has node; then
+    NODE_MAJOR=$(node -v | sed 's/v//' | cut -d. -f1)
+    if [[ "$NODE_MAJOR" -ge 18 ]]; then
+        ok "Node $(node -v) already installed"
     else
-        log_warning "Python version too old (need 3.9+), installing newer version..."
-        if [[ "$PKG_MANAGER" == "apt-get" ]]; then
-            sudo add-apt-repository -y ppa:deadsnakes/ppa > /dev/null 2>&1 || true
-            $PKG_UPDATE > /dev/null 2>&1 || true
-            $PKG_INSTALL python3.11 python3.11-venv python3-pip 2>/dev/null || \
-            $PKG_INSTALL python3 python3-venv python3-pip
-        else
-            $PKG_INSTALL python3 python3-pip
-        fi
+        warn "Node $(node -v) is too old (need 18+)"
+        NEED_NODE=true
     fi
 else
-    log_warning "Python not found, installing..."
-    if [[ "$PKG_MANAGER" == "apt-get" ]]; then
-        $PKG_INSTALL python3 python3-venv python3-pip
-    else
-        $PKG_INSTALL python3 python3-pip
-    fi
-    log_success "Python installed"
+    NEED_NODE=true
 fi
 
-# Install pip if missing
-if ! command_exists pip3; then
-    log_warning "pip not found, installing..."
-    $PKG_INSTALL python3-pip
-fi
-
-log_success "Python environment ready"
-echo ""
-
-# ─── Install Node.js 20+ ──────────────────────────────────────────────────────
-
-log_info "Checking Node.js installation..."
-
-if command_exists node; then
-    NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
-    log_success "Node.js v$(node --version) found"
-    
-    if [[ $NODE_VERSION -ge 18 ]]; then
-        log_success "Node.js version is compatible"
-    else
-        log_warning "Node.js version too old (need 18+), upgrading..."
-        INSTALL_NODE=true
-    fi
-else
-    log_warning "Node.js not found, installing..."
-    INSTALL_NODE=true
-fi
-
-if [[ "$INSTALL_NODE" == "true" ]]; then
-    log_info "Installing Node.js 20 LTS via NodeSource..."
-    
-    # Install Node.js 20 LTS using NodeSource
-    if [[ "$PKG_MANAGER" == "apt-get" ]]; then
+if [[ "$NEED_NODE" == "true" ]]; then
+    info "Installing Node.js 20 LTS..."
+    if [[ "$PM" == "apt-get" ]]; then
         curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - > /dev/null 2>&1
-        $PKG_INSTALL nodejs
+        sudo apt-get install -y -qq nodejs > /dev/null 2>&1
     else
         curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash - > /dev/null 2>&1
-        $PKG_INSTALL nodejs
+        sudo yum install -y -q nodejs > /dev/null 2>&1
     fi
-    
-    log_success "Node.js $(node --version) installed"
+    ok "Node $(node -v) installed"
 fi
 
-# Verify npm
-if ! command_exists npm; then
-    log_error "npm not found after Node.js installation"
-    exit 1
+ok "npm v$(npm -v)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 5 — Create Python venv & install dependencies
+# ═══════════════════════════════════════════════════════════════════════════════
+step "STEP 5/10 — Python Virtual Environment"
+
+VENV_DIR="$PROJECT_DIR/backend/venv"
+
+if [ -d "$VENV_DIR" ]; then
+    warn "Existing venv found — removing to rebuild clean"
+    rm -rf "$VENV_DIR"
 fi
 
-log_success "npm v$(npm --version) ready"
-echo ""
+info "Creating venv at backend/venv ..."
+python3 -m venv "$VENV_DIR"
+ok "venv created"
 
-# ─── Install Git (if missing) ─────────────────────────────────────────────────
+# Activate venv
+# shellcheck disable=SC1091
+source "$VENV_DIR/bin/activate"
+ok "venv activated ($(python --version))"
 
-if ! command_exists git; then
-    log_info "Installing git..."
-    $PKG_INSTALL git
-    log_success "Git installed"
-fi
+info "Upgrading pip..."
+pip install --upgrade pip --quiet > /dev/null 2>&1
+ok "pip $(pip --version | awk '{print $2}')"
 
-echo ""
+info "Installing Python packages from requirements.txt..."
+pip install -r "$PROJECT_DIR/backend/requirements.txt" --quiet > /dev/null 2>&1
+ok "All Python packages installed"
 
-# ─── Navigate to Project Directory ───────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 6 — Create Backend .env from scratch
+# ═══════════════════════════════════════════════════════════════════════════════
+step "STEP 6/10 — Create backend/.env"
 
-PROJECT_DIR="/home/$(whoami)/signify-flow"
+cat > "$PROJECT_DIR/backend/.env" << BACKEND_ENV
+# ══════════════════════════════════════════════════════════════════════════════
+# SignifyFlow – Backend Environment Variables
+# ══════════════════════════════════════════════════════════════════════════════
 
-if [ ! -d "$PROJECT_DIR" ]; then
-    log_warning "Project directory not found at $PROJECT_DIR"
-    log_info "Using current directory: $(pwd)"
-    PROJECT_DIR=$(pwd)
-fi
+# ── App ───────────────────────────────────────────────────────────────────────
+APP_NAME=SignifyFlow
+APP_VERSION=1.0.0
+DEBUG=false
 
-cd "$PROJECT_DIR" || {
-    log_error "Cannot navigate to project directory"
-    exit 1
-}
+# ── Server ────────────────────────────────────────────────────────────────────
+BACKEND_HOST=0.0.0.0
+BACKEND_PORT=8081
+BACKEND_URL=http://${EC2_IP}:8081
 
-log_success "Working directory: $PROJECT_DIR"
-echo ""
+# ── Frontend / CORS ──────────────────────────────────────────────────────────
+FRONTEND_URL=http://${EC2_IP}:8080
+ALLOWED_ORIGINS=http://${EC2_IP}:8080,http://${EC2_IP}:8081,http://localhost:8080,http://localhost:8081
 
-# ─── Update .env Files with EC2 IP ────────────────────────────────────────────
+# ── Supabase ──────────────────────────────────────────────────────────────────
+SUPABASE_URL=https://kdbxpoidpyqevmivzaih.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkYnhwb2lkcHlxZXZtaXZ6YWloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NTE0NjIsImV4cCI6MjA4NjMyNzQ2Mn0.lbq9_gVDm0SAdY7-zUkxj15kS2AFfL9RQeAH_Ah4qPc
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkYnhwb2lkcHlxZXZtaXZ6YWloIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDc1MTQ2MiwiZXhwIjoyMDg2MzI3NDYyfQ.C7hbeEipZFe42hSbAje9-hhpC2OE-8LpdoZahfC9rXk
 
-log_info "Updating environment files with EC2 IP: $EC2_IP"
+# ── JWT / Auth ────────────────────────────────────────────────────────────────
+JWT_SECRET=QcoFJkoqmpah65g6sBJUb0f8LKtpkfp7JNCmBdPXlgPg0AarAHVEnyYqqwo8ZA+XbWDhrfSHvyZoS3vhsXUdcg==
+ACCESS_TOKEN_EXPIRE_MINUTES=60
 
-# Backend .env
-if [ -f "backend/.env" ]; then
-    log_info "Updating backend/.env..."
-    
-    # Update BACKEND_URL
-    sed -i.bak "s|^BACKEND_URL=.*|BACKEND_URL=http://${EC2_IP}:8081|" backend/.env
-    
-    # Update FRONTEND_URL
-    sed -i.bak "s|^FRONTEND_URL=.*|FRONTEND_URL=http://${EC2_IP}:8080|" backend/.env
-    
-    # Update ALLOWED_ORIGINS
-    sed -i.bak "s|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS=http://${EC2_IP}:8080,http://${EC2_IP}:8081,http://${EC2_IP}:5173,http://${EC2_IP}:3000|" backend/.env
-    
-    log_success "backend/.env updated"
-else
-    log_error "backend/.env not found! Please create it first."
-    exit 1
-fi
+# ── File Upload ───────────────────────────────────────────────────────────────
+MAX_UPLOAD_SIZE_MB=25
+ALLOWED_FILE_TYPES=pdf,doc,docx,txt,png,jpg,jpeg
+BACKEND_ENV
 
-# Frontend .env
-if [ -f ".env" ]; then
-    log_info "Updating frontend .env..."
-    
-    # Update VITE_API_URL
-    sed -i.bak "s|^VITE_API_URL=.*|VITE_API_URL=http://${EC2_IP}:8081|" .env
-    
-    log_success "frontend .env updated"
-else
-    log_error "Frontend .env not found! Please create it first."
-    exit 1
-fi
+ok "backend/.env created with IP = \$EC2_IP"
 
-echo ""
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 7 — Create Frontend .env from scratch
+# ═══════════════════════════════════════════════════════════════════════════════
+step "STEP 7/10 — Create frontend .env"
 
-# ─── Install Python Dependencies ──────────────────────────────────────────────
+cat > "$PROJECT_DIR/.env" << FRONTEND_ENV
+# ═══════════════════════════════════════════════════════════════════════════════
+# SignifyFlow – Frontend Environment Variables
+# ═══════════════════════════════════════════════════════════════════════════════
 
-log_info "Installing Python dependencies..."
+# ── Backend API (MUST be port 8081 — the backend port, NOT 8080) ──────────────
+VITE_API_URL=http://${EC2_IP}:8081
 
-cd backend
+# ── Supabase ──────────────────────────────────────────────────────────────────
+VITE_SUPABASE_URL=https://kdbxpoidpyqevmivzaih.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkYnhwb2lkcHlxZXZtaXZ6YWloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NTE0NjIsImV4cCI6MjA4NjMyNzQ2Mn0.lbq9_gVDm0SAdY7-zUkxj15kS2AFfL9RQeAH_Ah4qPc
 
-if [ -f "requirements.txt" ]; then
-    pip3 install --quiet --upgrade pip
-    pip3 install --quiet -r requirements.txt
-    log_success "Python packages installed"
-else
-    log_error "backend/requirements.txt not found!"
-    exit 1
-fi
+# ── App Meta ──────────────────────────────────────────────────────────────────
+VITE_APP_NAME=SignifyFlow
 
-cd ..
-echo ""
+# ── Feature Flags ─────────────────────────────────────────────────────────────
+VITE_ENABLE_AI_FIELD_DETECTION=true
 
-# ─── Install Node.js Dependencies ─────────────────────────────────────────────
+# ── File Upload ───────────────────────────────────────────────────────────────
+VITE_MAX_UPLOAD_SIZE_MB=25
+VITE_ALLOWED_FILE_TYPES=pdf,doc,docx,txt,png,jpg,jpeg
+FRONTEND_ENV
 
-log_info "Installing Node.js dependencies (this may take a few minutes)..."
+ok "frontend .env created with VITE_API_URL = http://\${EC2_IP}:8081"
 
-if [ -f "package.json" ]; then
-    npm install --silent > /dev/null 2>&1 || npm install
-    log_success "Node.js packages installed"
-else
-    log_error "package.json not found!"
-    exit 1
-fi
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 8 — Install Node.js packages
+# ═══════════════════════════════════════════════════════════════════════════════
+step "STEP 8/10 — Install Node.js Packages"
 
-echo ""
+info "Running npm install (may take 2-3 minutes on first run)..."
+cd "$PROJECT_DIR"
+npm install > /dev/null 2>&1 || npm install
+ok "All Node.js packages installed"
 
-# ─── Kill Existing Processes ──────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 9 — Kill existing processes & start services
+# ═══════════════════════════════════════════════════════════════════════════════
+step "STEP 9/10 — Start Services (nohup)"
 
-log_info "Checking for existing processes..."
+# Create logs dir
+mkdir -p "$PROJECT_DIR/logs"
 
-# Kill existing backend process
+# Kill anything on 8081
 if lsof -i:8081 > /dev/null 2>&1; then
-    log_warning "Port 8081 in use, killing existing process..."
+    warn "Port 8081 in use — killing..."
     sudo kill -9 $(sudo lsof -t -i:8081) 2>/dev/null || true
     sleep 2
 fi
 
-# Kill existing frontend process
+# Kill anything on 8080
 if lsof -i:8080 > /dev/null 2>&1; then
-    log_warning "Port 8080 in use, killing existing process..."
+    warn "Port 8080 in use — killing..."
     sudo kill -9 $(sudo lsof -t -i:8080) 2>/dev/null || true
     sleep 2
 fi
 
-log_success "Ports cleared"
-echo ""
+ok "Ports 8080 & 8081 cleared"
 
-# ─── Start Backend ────────────────────────────────────────────────────────────
+# ── Start Backend ─────────────────────────────────────────────────────────────
+info "Starting backend (uvicorn) on 0.0.0.0:8081 ..."
 
-log_info "Starting backend server on port 8081..."
+cd "$PROJECT_DIR/backend"
 
-cd backend
+# Run uvicorn using the venv python — nohup + background
+nohup "$VENV_DIR/bin/python" -m uvicorn main:app \
+    --host 0.0.0.0 \
+    --port 8081 \
+    --reload \
+    > "$PROJECT_DIR/logs/backend.log" 2>&1 &
 
-# Start backend in background with nohup
-nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 8081 --reload > ../logs/backend.log 2>&1 &
 BACKEND_PID=$!
-
-# Wait a bit and check if it started
 sleep 3
 
-if ps -p $BACKEND_PID > /dev/null; then
-    log_success "Backend started (PID: $BACKEND_PID)"
-    echo -e "         Logs: ${BLUE}tail -f logs/backend.log${NC}"
+if ps -p $BACKEND_PID > /dev/null 2>&1; then
+    ok "Backend running (PID $BACKEND_PID)"
 else
-    log_error "Backend failed to start. Check logs/backend.log"
+    fail "Backend failed to start.  Check: tail -f logs/backend.log"
+    tail -5 "$PROJECT_DIR/logs/backend.log" 2>/dev/null || true
     exit 1
 fi
 
-cd ..
-echo ""
+# ── Start Frontend ────────────────────────────────────────────────────────────
+info "Starting frontend (vite) on 0.0.0.0:8080 ..."
 
-# ─── Start Frontend ───────────────────────────────────────────────────────────
+cd "$PROJECT_DIR"
 
-log_info "Starting frontend server on port 8080..."
+nohup npm run dev -- --host 0.0.0.0 --port 8080 \
+    > "$PROJECT_DIR/logs/frontend.log" 2>&1 &
 
-# Create logs directory if it doesn't exist
-mkdir -p logs
-
-# Start frontend in background with nohup
-nohup npm run dev -- --host 0.0.0.0 --port 8080 > logs/frontend.log 2>&1 &
 FRONTEND_PID=$!
-
-# Wait a bit and check if it started
 sleep 5
 
-if ps -p $FRONTEND_PID > /dev/null; then
-    log_success "Frontend started (PID: $FRONTEND_PID)"
-    echo -e "         Logs: ${BLUE}tail -f logs/frontend.log${NC}"
+if ps -p $FRONTEND_PID > /dev/null 2>&1; then
+    ok "Frontend running (PID $FRONTEND_PID)"
 else
-    log_error "Frontend failed to start. Check logs/frontend.log"
+    fail "Frontend failed to start.  Check: tail -f logs/frontend.log"
+    tail -5 "$PROJECT_DIR/logs/frontend.log" 2>/dev/null || true
     exit 1
 fi
 
-echo ""
-
-# ─── Success Message ──────────────────────────────────────────────────────────
-
-echo -e "${GREEN}"
-cat << "EOF"
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                                                                           ║
-║                         🎉 DEPLOYMENT SUCCESSFUL! 🎉                      ║
-║                                                                           ║
-╚═══════════════════════════════════════════════════════════════════════════╝
-EOF
-echo -e "${NC}"
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 10 — Done!
+# ═══════════════════════════════════════════════════════════════════════════════
+step "STEP 10/10 — All Done!"
 
 echo ""
-log_success "SignifyFlow is now running!"
+echo -e "${GREEN}╔═══════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║               DEPLOYMENT SUCCESSFUL                             ║${NC}"
+echo -e "${GREEN}╚═══════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "  ${BLUE}Frontend:${NC} http://${EC2_IP}:8080"
-echo -e "  ${BLUE}Backend:${NC}  http://${EC2_IP}:8081"
-echo -e "  ${BLUE}API Docs:${NC} http://${EC2_IP}:8081/docs"
+echo -e "  ${CYAN}Frontend :${NC}  http://${EC2_IP}:8080"
+echo -e "  ${CYAN}Backend  :${NC}  http://${EC2_IP}:8081"
+echo -e "  ${CYAN}API Docs :${NC}  http://${EC2_IP}:8081/docs"
 echo ""
-log_info "Process IDs:"
-echo "  Backend:  $BACKEND_PID"
-echo "  Frontend: $FRONTEND_PID"
+echo -e "  ${CYAN}Backend PID :${NC}  $BACKEND_PID"
+echo -e "  ${CYAN}Frontend PID:${NC}  $FRONTEND_PID"
 echo ""
-log_info "To view logs:"
-echo -e "  ${BLUE}tail -f logs/backend.log${NC}"
-echo -e "  ${BLUE}tail -f logs/frontend.log${NC}"
+echo -e "  ${BLUE}View logs:${NC}"
+echo "    tail -f logs/backend.log"
+echo "    tail -f logs/frontend.log"
 echo ""
-log_info "To stop services:"
-echo "  kill $BACKEND_PID $FRONTEND_PID"
+echo -e "  ${BLUE}Stop both:${NC}"
+echo "    kill $BACKEND_PID $FRONTEND_PID"
+echo "    # or:  ./stop-services.sh"
 echo ""
-log_warning "IMPORTANT: Make sure your EC2 Security Group allows inbound traffic on:"
-echo "  - Port 8080 (Frontend)"
-echo "  - Port 8081 (Backend API)"
+echo -e "  ${YELLOW}SECURITY GROUP — make sure these inbound rules exist:${NC}"
+echo "    TCP 8080  from 0.0.0.0/0  (Frontend)"
+echo "    TCP 8081  from 0.0.0.0/0  (Backend)"
+echo "    TCP 22    from your IP    (SSH)"
 echo ""
-log_info "To make services persistent across reboots, consider using systemd or PM2"
+echo -e "  ${BLUE}(Optional) Persist across reboots:${NC}"
+echo "    sudo npm i -g pm2"
+echo "    pm2 start \"backend/venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8081\" --name backend"
+echo "    pm2 start \"npm run dev -- --host 0.0.0.0 --port 8080\" --name frontend"
+echo "    pm2 save && pm2 startup"
 echo ""
