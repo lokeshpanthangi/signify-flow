@@ -126,25 +126,34 @@ fi
 
 echo ""
 
-# ─── Install Python 3.11+ ─────────────────────────────────────────────────────
+# ─── Install Python 3.9+ ──────────────────────────────────────────────────────
 
 log_info "Checking Python installation..."
 
 if command_exists python3; then
     PYTHON_VERSION=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)
+    PYTHON_MAJOR=$(echo "$PYTHON_VERSION" | cut -d'.' -f1)
+    PYTHON_MINOR=$(echo "$PYTHON_VERSION" | cut -d'.' -f2)
     log_success "Python $PYTHON_VERSION found"
     
-    # Check if version is >= 3.9
-    if [[ $(echo "$PYTHON_VERSION >= 3.9" | bc -l) -eq 1 ]]; then
+    # Check if version is >= 3.9 using simple integer comparison
+    if [[ "$PYTHON_MAJOR" -ge 3 ]] && [[ "$PYTHON_MINOR" -ge 9 ]]; then
         log_success "Python version is compatible"
     else
         log_warning "Python version too old (need 3.9+), installing newer version..."
-        $PKG_INSTALL python3.11 python3.11-venv python3-pip
+        if [[ "$PKG_MANAGER" == "apt-get" ]]; then
+            sudo add-apt-repository -y ppa:deadsnakes/ppa > /dev/null 2>&1 || true
+            $PKG_UPDATE > /dev/null 2>&1 || true
+            $PKG_INSTALL python3.11 python3.11-venv python3-pip 2>/dev/null || \
+            $PKG_INSTALL python3 python3-venv python3-pip
+        else
+            $PKG_INSTALL python3 python3-pip
+        fi
     fi
 else
     log_warning "Python not found, installing..."
     if [[ "$PKG_MANAGER" == "apt-get" ]]; then
-        $PKG_INSTALL python3.11 python3.11-venv python3-pip
+        $PKG_INSTALL python3 python3-venv python3-pip
     else
         $PKG_INSTALL python3 python3-pip
     fi
