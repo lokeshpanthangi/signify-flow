@@ -1,8 +1,10 @@
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SettingsPage = () => {
     const { theme, setTheme } = useTheme();
+    const { user } = useAuth();
 
     return (
         <DashboardLayout showSearch={false}>
@@ -20,7 +22,8 @@ const SettingsPage = () => {
                             <label className="text-sm font-medium text-stone-600 dark:text-stone-400 mb-1 block">Full Name</label>
                             <input
                                 type="text"
-                                defaultValue="John Doe"
+                                defaultValue={user?.name || ''}
+                                placeholder="Your full name"
                                 className="w-full px-4 py-2.5 rounded-lg border border-stone-200 dark:border-[#2A2A32] bg-white dark:bg-[#111114] text-stone-800 dark:text-stone-200 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none transition-colors placeholder:text-stone-400 dark:placeholder:text-stone-500"
                             />
                         </div>
@@ -28,7 +31,8 @@ const SettingsPage = () => {
                             <label className="text-sm font-medium text-stone-600 dark:text-stone-400 mb-1 block">Email</label>
                             <input
                                 type="email"
-                                defaultValue="john@example.com"
+                                defaultValue={user?.email || ''}
+                                placeholder="your@email.com"
                                 className="w-full px-4 py-2.5 rounded-lg border border-stone-200 dark:border-[#2A2A32] bg-white dark:bg-[#111114] text-stone-800 dark:text-stone-200 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none transition-colors placeholder:text-stone-400 dark:placeholder:text-stone-500"
                             />
                         </div>

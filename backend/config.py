@@ -58,22 +58,13 @@ class Settings:
     # ── Supabase ──────────────────────────────────────────────────────────────
 
     # Project URL – found at Supabase → Settings → API → Project URL
-    SUPABASE_URL: str = os.getenv(
-        "SUPABASE_URL",
-        "https://kdbxpoidpyqevmivzaih.supabase.co",
-    )
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
 
     # Anon (public) key – used for disposable auth clients (login/signup)
-    SUPABASE_ANON_KEY: str = os.getenv(
-        "SUPABASE_ANON_KEY",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkYnhwb2lkcHlxZXZtaXZ6YWloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NTE0NjIsImV4cCI6MjA4NjMyNzQ2Mn0.lbq9_gVDm0SAdY7-zUkxj15kS2AFfL9RQeAH_Ah4qPc",
-    )
+    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
 
     # Service-role key – BYPASSES RLS; used for all DB ops from the server
-    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv(
-        "SUPABASE_SERVICE_ROLE_KEY",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkYnhwb2lkcHlxZXZtaXZ6YWloIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDc1MTQ2MiwiZXhwIjoyMDg2MzI3NDYyfQ.C7hbeEipZFe42hSbAje9-hhpC2OE-8LpdoZahfC9rXk",
-    )
+    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
     # ── JWT / Auth ────────────────────────────────────────────────────────────
 

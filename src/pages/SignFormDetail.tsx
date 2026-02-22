@@ -11,7 +11,8 @@ import {
     Download, RefreshCw, PartyPopper, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { RECIPIENT_HEX_COLORS as RECIPIENT_COLORS } from '@/lib/constants';
+import { toast } from 'sonner';
 import {
     Dialog,
     DialogContent,
@@ -49,7 +50,7 @@ const StatCard = ({ label, value, icon: Icon, color }: { label: string; value: s
     </div>
 );
 
-const RECIPIENT_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#ef4444', '#14b8a6'];
+
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -58,7 +59,6 @@ const RECIPIENT_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#ef4444',
 const SignFormDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { toast } = useToast();
 
     const [form, setForm] = useState<SignFormDetailData | null>(null);
     const [template, setTemplate] = useState<TemplateData | null>(null);
@@ -84,11 +84,7 @@ const SignFormDetail = () => {
                 setTemplate(t);
             } catch { /* template may have been deleted */ }
         } catch (err: unknown) {
-            toast({
-                title: 'Error',
-                description: err instanceof Error ? err.message : 'Could not load sign form.',
-                variant: 'destructive',
-            });
+            toast.error(err instanceof Error ? err.message : 'Could not load sign form.');
         }
     }, [id]);
 
@@ -108,7 +104,7 @@ const SignFormDetail = () => {
         setRefreshing(true);
         await fetchData();
         setRefreshing(false);
-        toast({ title: '🔄 Refreshed', description: 'Signing status updated.' });
+        toast.success('Signing status updated.');
     };
 
     // ─── Loading / Not Found ───
@@ -159,7 +155,7 @@ const SignFormDetail = () => {
     // ─── Handlers ───
     const handleCopyLink = () => {
         navigator.clipboard.writeText(shareUrl);
-        toast({ title: '✅ Link Copied!', description: 'The public form link has been copied to your clipboard.' });
+        toast.success('Link copied to clipboard.');
     };
 
     const handleToggleStatus = async () => {
@@ -169,12 +165,9 @@ const SignFormDetail = () => {
         try {
             await updateSignForm(form.id, { status: newStatus as 'active' | 'inactive' | 'completed' });
             setIsActive(!isActive);
-            toast({
-                title: isActive ? '⏸️ Form Deactivated' : '✅ Form Activated',
-                description: isActive ? 'The form is now inactive.' : 'The form is now live.',
-            });
+            toast.success(isActive ? 'Form deactivated.' : 'Form activated.');
         } catch (err: unknown) {
-            toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to update status.', variant: 'destructive' });
+            toast.error(err instanceof Error ? err.message : 'Failed to update status.');
         } finally {
             setToggling(false);
         }
@@ -184,10 +177,10 @@ const SignFormDetail = () => {
         if (!confirm('Are you sure you want to delete this sign form? This cannot be undone.')) return;
         try {
             await deleteSignForm(form.id);
-            toast({ title: '🗑️ Deleted', description: 'Sign form has been deleted.' });
+            toast.success('Sign form has been deleted.');
             navigate('/signforms');
         } catch (err: unknown) {
-            toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to delete.', variant: 'destructive' });
+            toast.error(err instanceof Error ? err.message : 'Failed to delete.');
         }
     };
 
@@ -309,10 +302,10 @@ const SignFormDetail = () => {
             pdf.save(`${form.name.replace(/[^a-zA-Z0-9]/g, '_')}_signed.pdf`);
             document.body.removeChild(container);
 
-            toast({ title: '📄 Downloaded!', description: 'Your signed document has been saved as PDF.' });
+            toast.success('Signed document saved as PDF.');
         } catch (err) {
             console.error('Download failed:', err);
-            toast({ title: 'Download Failed', description: 'Could not generate PDF. Please try again.', variant: 'destructive' });
+            toast.error('Could not generate PDF. Please try again.');
         } finally {
             setDownloading(false);
         }

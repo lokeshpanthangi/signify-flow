@@ -1,10 +1,12 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     FileText,
     TrendingUp,
     CheckCircle2,
     Zap,
-    Activity
+    Activity,
+    Loader2,
 } from 'lucide-react';
 import {
     AreaChart,
@@ -26,6 +28,8 @@ import {
     Radar,
 } from 'recharts';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { listDocuments } from '@/lib/api/documents';
+import { listSignForms } from '@/lib/api/signforms';
 
 // --- Report Sub-Components ---
 
@@ -197,6 +201,28 @@ const TeamPerformance = () => {
 // --- Reports Page ---
 
 const ReportsPage = () => {
+    const [totalDocs, setTotalDocs] = useState(0);
+    const [signedDocs, setSignedDocs] = useState(0);
+    const [totalForms, setTotalForms] = useState(0);
+    const [activeForms, setActiveForms] = useState(0);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const [docsRes, formsRes] = await Promise.all([
+                    listDocuments({ limit: 1000 }),
+                    listSignForms({ limit: 1000 }),
+                ]);
+                setTotalDocs(docsRes.total);
+                setSignedDocs(docsRes.documents.filter(d => d.status === 'signed').length);
+                setTotalForms(formsRes.total);
+                setActiveForms(formsRes.sign_forms.filter(f => f.status === 'active').length);
+            } catch { /* silent */ }
+            finally { setLoading(false); }
+        })();
+    }, []);
+
     return (
         <DashboardLayout showSearch={false}>
             <div className="space-y-8 animate-in fade-in duration-500">
@@ -205,13 +231,19 @@ const ReportsPage = () => {
                     <p className="text-stone-500 dark:text-stone-400 text-sm">Track your document performance and team efficiency.</p>
                 </div>
 
-                {/* KPI Grid */}
+                {/* KPI Grid — real data */}
+                {loading ? (
+                    <div className="flex items-center justify-center py-12 text-stone-400">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <KPICard title="Total Documents" value="1,284" change="+12% from last month" icon={FileText} delay={0.1} />
-                    <KPICard title="Completed" value="942" change="+8% from last month" icon={CheckCircle2} delay={0.2} />
-                    <KPICard title="Sign Velocity" value="2.4 days" change="-12% faster" icon={Zap} delay={0.3} />
-                    <KPICard title="Efficiency Score" value="98.5" change="Top 5%" icon={Activity} delay={0.4} />
+                    <KPICard title="Total Documents" value={String(totalDocs)} change={`${signedDocs} signed`} icon={FileText} delay={0.1} />
+                    <KPICard title="Signed" value={String(signedDocs)} change={totalDocs > 0 ? `${Math.round((signedDocs / totalDocs) * 100)}% completion` : '—'} icon={CheckCircle2} delay={0.2} />
+                    <KPICard title="Sign Forms" value={String(totalForms)} change={`${activeForms} active`} icon={Zap} delay={0.3} />
+                    <KPICard title="Active Forms" value={String(activeForms)} change={totalForms > 0 ? `${Math.round((activeForms / totalForms) * 100)}% active` : '—'} icon={Activity} delay={0.4} />
                 </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Main Activity Chart */}

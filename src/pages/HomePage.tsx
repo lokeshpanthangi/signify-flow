@@ -13,6 +13,7 @@ import {
 import { listDocuments, type DocumentData } from '@/lib/api/documents';
 import { getPendingForMe, type PendingSignFormItem } from '@/lib/api/signforms';
 import { cn } from '@/lib/utils';
+import { STATUS_COLORS } from '@/lib/constants';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     DropdownMenu,
@@ -62,13 +63,6 @@ const DocumentPreview = ({ content }: { content?: string }) => (
 );
 
 const DocumentCard = ({ doc, onClick }: { doc: DocumentData, onClick: () => void }) => {
-    const statusColors: Record<string, string> = {
-        signed: 'text-green-600',
-        pending: 'text-amber-600',
-        declined: 'text-red-500',
-        draft: 'text-stone-400',
-        completed: 'text-green-600',
-    };
     const dateStr = doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : '';
 
     return (
@@ -94,7 +88,7 @@ const DocumentCard = ({ doc, onClick }: { doc: DocumentData, onClick: () => void
                         <p className="text-[10px] text-stone-600 font-medium mt-0.5">
                             {dateStr} • <span className={cn(
                                 "uppercase tracking-wide font-bold",
-                                statusColors[doc.status] || 'text-stone-400'
+                                STATUS_COLORS[doc.status] || 'text-stone-400'
                             )}>{doc.status}</span>
                         </p>
                     </div>

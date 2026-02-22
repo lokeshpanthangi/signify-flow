@@ -5,6 +5,7 @@ import {
     MoreHorizontal, Search, Plus, FileText, Trash2, Edit3, Eye, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { STATUS_COLORS } from '@/lib/constants';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -58,12 +59,7 @@ const DocumentCard = ({
     onEdit?: () => void;
     onDelete?: () => void;
 }) => {
-    const statusColors: Record<string, string> = {
-        signed: 'text-green-600',
-        pending: 'text-amber-600',
-        declined: 'text-red-500',
-        draft: 'text-stone-400',
-    };
+
 
     const dateStr = doc.updated_at
         ? new Date(doc.updated_at).toLocaleDateString()
@@ -86,7 +82,7 @@ const DocumentCard = ({
                         <h3 className="font-semibold text-stone-800 dark:text-white text-sm truncate">{doc.name}</h3>
                         <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-0.5">
                             {dateStr} •{' '}
-                            <span className={cn('uppercase tracking-wide font-bold', statusColors[doc.status] || 'text-stone-400')}>
+                            <span className={cn('uppercase tracking-wide font-bold', STATUS_COLORS[doc.status] || 'text-stone-400')}>
                                 {doc.status}
                             </span>
                         </p>

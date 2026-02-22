@@ -8,13 +8,14 @@ All endpoints require an access_token except the public form endpoints.
 
 from typing import Optional, List
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, status, Header, Request
+from fastapi import APIRouter, HTTPException, status, Header, Request, Depends
 from pydantic import BaseModel, Field
 
 from supabase_client import get_supabase_client
 from crud import auth as auth_crud
 from crud import signforms as signforms_crud
 from crud import templates as templates_crud
+from dependencies import MessageResponse, get_current_user_id
 
 router = APIRouter(prefix="/signforms", tags=["signforms"])
 
@@ -74,10 +75,6 @@ class SignFormListOut(BaseModel):
     total: int
 
 
-class MessageResponse(BaseModel):
-    message: str
-
-
 class SignFormRespondRequest(BaseModel):
     """Public signing submission."""
     signer_name: str = Field(..., min_length=1, max_length=300)
@@ -102,38 +99,6 @@ class PublicTemplateOut(BaseModel):
     template_name: str
     content: str
     fields_config: Optional[dict] = None
-
-
-# ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async def _get_current_user_id(authorization: Optional[str]) -> str:
-    """
-    Extract and validate the user from the Authorization header.
-    """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid Authorization header",
-        )
-
-    token = authorization.split(" ", 1)[1]
-    supabase = get_supabase_client()
-
-    try:
-        user_response = auth_crud.get_user_by_token(supabase, token)
-        if user_response.user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired token",
-            )
-        return str(user_response.user.id)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Authentication failed: {str(e)}",
-        )
 
 
 def _to_signform_out(data: dict) -> SignFormOut:
@@ -174,10 +139,8 @@ def _to_response_out(data: dict) -> ResponseEntryOut:
 @router.post("", response_model=SignFormOut, status_code=status.HTTP_201_CREATED)
 async def create_signform(
     body: SignFormCreateRequest,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Create a new sign form for the authenticated user."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     # Verify the template exists and belongs to the user
@@ -235,10 +198,8 @@ async def list_signforms(
     search: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """List all sign forms for the authenticated user."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -288,14 +249,8 @@ class PendingSignFormsOut(BaseModel):
 
 @router.get("/pending-for-me", response_model=PendingSignFormsOut)
 async def get_pending_for_me(
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """
-    Returns active sign forms where the authenticated user's email
-    appears as a recipient in the template's fields_config.
-    Excludes forms the user has already completed.
-    """
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -396,10 +351,8 @@ async def get_pending_for_me(
 @router.get("/{signform_id}", response_model=SignFormDetailOut)
 async def get_signform(
     signform_id: str,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Get a single sign form by ID, including its responses. Owner only."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -439,10 +392,8 @@ async def get_signform(
 async def update_signform(
     signform_id: str,
     body: SignFormUpdateRequest,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Update a sign form. Only the owner can modify it."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -494,10 +445,8 @@ async def update_signform(
 @router.delete("/{signform_id}", response_model=MessageResponse)
 async def delete_signform(
     signform_id: str,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Delete a sign form. Only the owner can delete it."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:

@@ -6,12 +6,12 @@ All endpoints require an access_token to identify the owner.
 """
 
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, status, Header
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, Field
 
 from supabase_client import get_supabase_client
-from crud import auth as auth_crud
 from crud import templates as templates_crud
+from dependencies import MessageResponse, get_current_user_id
 
 router = APIRouter(prefix="/templates", tags=["templates"])
 
@@ -48,52 +48,13 @@ class TemplateListOut(BaseModel):
     total: int
 
 
-class MessageResponse(BaseModel):
-    message: str
-
-
-# ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async def _get_current_user_id(authorization: Optional[str]) -> str:
-    """
-    Extract and validate the user from the Authorization header.
-    Expects: "Bearer <access_token>"
-    """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid Authorization header",
-        )
-
-    token = authorization.split(" ", 1)[1]
-    supabase = get_supabase_client()
-
-    try:
-        user_response = auth_crud.get_user_by_token(supabase, token)
-        if user_response.user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired token",
-            )
-        return str(user_response.user.id)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Authentication failed: {str(e)}",
-        )
-
-
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.post("", response_model=TemplateOut, status_code=status.HTTP_201_CREATED)
 async def create_template(
     body: TemplateCreateRequest,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Create a new template for the authenticated user."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -129,10 +90,8 @@ async def list_templates(
     search: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """List all templates for the authenticated user, with optional filters."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -163,10 +122,8 @@ async def list_templates(
 @router.get("/{template_id}", response_model=TemplateOut)
 async def get_template(
     template_id: str,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Get a single template by ID. Only the owner can access it."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -200,10 +157,8 @@ async def get_template(
 async def update_template(
     template_id: str,
     body: TemplateUpdateRequest,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Update a template. Only the owner can modify it."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -248,10 +203,8 @@ async def update_template(
 @router.delete("/{template_id}", response_model=MessageResponse)
 async def delete_template(
     template_id: str,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Delete a template. Only the owner can delete it."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:

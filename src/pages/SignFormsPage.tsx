@@ -4,7 +4,7 @@ import { Link as LinkIcon, Loader2, Plus } from 'lucide-react';
 import { listSignForms, SignFormData } from '@/lib/api/signforms';
 import { cn } from '@/lib/utils';
 import { DashboardLayout } from '@/components/DashboardLayout';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 const SignFormCard = ({ form, onClick }: { form: SignFormData; onClick: () => void }) => (
     <div
@@ -53,7 +53,6 @@ const SignFormCard = ({ form, onClick }: { form: SignFormData; onClick: () => vo
 
 const SignFormsPage = () => {
     const navigate = useNavigate();
-    const { toast } = useToast();
     const [signForms, setSignForms] = useState<SignFormData[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -64,11 +63,7 @@ const SignFormsPage = () => {
                 const res = await listSignForms();
                 setSignForms(res.sign_forms);
             } catch (err: unknown) {
-                toast({
-                    title: 'Error',
-                    description: err instanceof Error ? err.message : 'Failed to load sign forms.',
-                    variant: 'destructive',
-                });
+                toast.error(err instanceof Error ? err.message : 'Failed to load sign forms.');
             } finally {
                 setLoading(false);
             }

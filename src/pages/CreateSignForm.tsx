@@ -7,13 +7,12 @@ import {
     Check, Calendar, Hash, AlertCircle, Sparkles, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 type Step = 'template' | 'configure' | 'review';
 
 const CreateSignForm = () => {
     const navigate = useNavigate();
-    const { toast } = useToast();
 
     const [currentStep, setCurrentStep] = useState<Step>('template');
     const [templates, setTemplates] = useState<TemplateData[]>([]);
@@ -35,11 +34,7 @@ const CreateSignForm = () => {
                 const res = await listTemplates({ limit: 100 });
                 setTemplates(res.templates);
             } catch (err: unknown) {
-                toast({
-                    title: 'Error loading templates',
-                    description: err instanceof Error ? err.message : 'Could not fetch templates.',
-                    variant: 'destructive',
-                });
+                toast.error(err instanceof Error ? err.message : 'Could not fetch templates.');
             } finally {
                 setLoadingTemplates(false);
             }
@@ -78,17 +73,10 @@ const CreateSignForm = () => {
                 expiry_date: formConfig.expiryDate || undefined,
             });
 
-            toast({
-                title: '🎉 SignForm Created!',
-                description: `"${formConfig.name}" is now live and accepting responses.`,
-            });
+            toast.success(`"${formConfig.name}" is now live and accepting responses.`);
             setTimeout(() => navigate('/signforms'), 800);
         } catch (err: unknown) {
-            toast({
-                title: 'Failed to create SignForm',
-                description: err instanceof Error ? err.message : 'Unknown error.',
-                variant: 'destructive',
-            });
+            toast.error(err instanceof Error ? err.message : 'Failed to create SignForm.');
         } finally {
             setCreating(false);
         }

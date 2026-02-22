@@ -10,6 +10,7 @@ from typing import Optional
 
 from supabase_client import get_supabase_client, get_auth_client
 from crud import auth as auth_crud
+from dependencies import MessageResponse, extract_bearer_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -44,28 +45,6 @@ class UserResponse(BaseModel):
     id: str
     email: str
     name: str
-
-
-class MessageResponse(BaseModel):
-    message: str
-
-
-# ─── Helpers ──────────────────────────────────────────────────────────────────
-
-def _extract_bearer_token(authorization: Optional[str]) -> str:
-    """Extract the token from an 'Authorization: Bearer <token>' header."""
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing Authorization header",
-        )
-    parts = authorization.split(" ", 1)
-    if len(parts) != 2 or parts[0].lower() != "bearer":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization header must be: Bearer <token>",
-        )
-    return parts[1]
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
@@ -236,7 +215,7 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
     Get the current authenticated user's info.
     Reads the JWT from the Authorization: Bearer <token> header.
     """
-    access_token = _extract_bearer_token(authorization)
+    access_token = extract_bearer_token(authorization)
     supabase = get_supabase_client()
     
     try:

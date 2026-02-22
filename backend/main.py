@@ -51,4 +51,4 @@ async def root():
 @app.get("/health", tags=["health"])
 async def health_check():
     """Health check endpoint for monitoring."""
-    return {"status": "healthy", "service": "signifyflow-api", "version": "1.0.0"}
+    return {"status": "healthy", "service": "signifyflow-api", "version": settings.APP_VERSION}

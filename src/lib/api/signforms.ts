@@ -4,31 +4,7 @@
  * Connects the frontend to the /signforms backend routes.
  */
 
-import { config } from '@/config';
-import { onAuthError } from '@/lib/authEvents';
-
-const API_URL = config.API_URL;
-
-function getToken(): string {
-    return localStorage.getItem('signify_token') || '';
-}
-
-function authHeaders(): Record<string, string> {
-    return {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${getToken()}`,
-    };
-}
-
-/** Wrapper around fetch that auto-triggers logout on 401 */
-async function authFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
-    const res = await fetch(input, init);
-    if (res.status === 401) {
-        onAuthError();
-        throw new Error('Session expired. Please log in again.');
-    }
-    return res;
-}
+import { API_URL, authHeaders, authFetch } from './client';
 
 /* ─── Types ─── */
 

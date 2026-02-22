@@ -5,14 +5,10 @@ import SignatureModal from '@/components/SignatureModal';
 import { toast } from 'sonner';
 import { getPublicTemplate, submitSignFormResponse, PublicTemplateData } from '@/lib/api/signforms';
 import { cn } from '@/lib/utils';
-
-/* ─── Constants ─── */
-const A4_WIDTH = 816;
-const A4_HEIGHT = 1056;
+import { A4_WIDTH, A4_HEIGHT, RECIPIENT_HEX_COLORS } from '@/lib/constants';
 
 /* Minimal color map for recipient field overlays */
 const RECIPIENT_HEX: Record<string, string> = {};
-const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#ef4444', '#06b6d4'];
 
 /* ═════════════════════════════════════════════════════════════════════════════
    SIGNING INTERFACE
@@ -46,7 +42,7 @@ const SigningInterface = () => {
                 // Build recipient color map
                 if (data.fields_config) {
                     data.fields_config.recipients.forEach((r, i) => {
-                        RECIPIENT_HEX[r.id] = COLORS[i % COLORS.length];
+                        RECIPIENT_HEX[r.id] = RECIPIENT_HEX_COLORS[i % RECIPIENT_HEX_COLORS.length];
                     });
                 }
 

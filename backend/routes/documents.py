@@ -6,12 +6,12 @@ All endpoints require an access_token to identify the sender/owner.
 """
 
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, status, Header
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, Field
 
 from supabase_client import get_supabase_client
-from crud import auth as auth_crud
 from crud import documents as documents_crud
+from dependencies import MessageResponse, get_current_user_id
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -51,52 +51,13 @@ class DocumentListOut(BaseModel):
     total: int
 
 
-class MessageResponse(BaseModel):
-    message: str
-
-
-# ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async def _get_current_user_id(authorization: Optional[str]) -> str:
-    """
-    Extract and validate the user from the Authorization header.
-    Expects: "Bearer <access_token>"
-    """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid Authorization header",
-        )
-
-    token = authorization.split(" ", 1)[1]
-    supabase = get_supabase_client()
-
-    try:
-        user_response = auth_crud.get_user_by_token(supabase, token)
-        if user_response.user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired token",
-            )
-        return str(user_response.user.id)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Authentication failed: {str(e)}",
-        )
-
-
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.post("", response_model=DocumentOut, status_code=status.HTTP_201_CREATED)
 async def create_document(
     body: DocumentCreateRequest,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Create a new document for the authenticated user."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -133,10 +94,8 @@ async def list_documents(
     search: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """List all documents for the authenticated user, with optional filters."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -167,10 +126,8 @@ async def list_documents(
 @router.get("/{document_id}", response_model=DocumentOut)
 async def get_document(
     document_id: str,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Get a single document by ID. Only the sender can access it."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -203,10 +160,8 @@ async def get_document(
 async def update_document(
     document_id: str,
     body: DocumentUpdateRequest,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Update a document. Only the sender can modify it."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
@@ -250,10 +205,8 @@ async def update_document(
 @router.delete("/{document_id}", response_model=MessageResponse)
 async def delete_document(
     document_id: str,
-    authorization: Optional[str] = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
-    """Delete a document. Only the sender can delete it."""
-    user_id = await _get_current_user_id(authorization)
     supabase = get_supabase_client()
 
     try:
